@@ -1,0 +1,198 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  @font-face {
+    font-family: "Aboreto";
+    src: url("https://fonts.gstatic.com/s/aboreto/v2/5DCXAKLhwDDQ4N8blKHeA2Yhjg.woff2")
+      format("woff2");
+    font-display: swap;
+  }
+}
+
+/* AuraLeve design tokens — inspired by the original brand:
+   purple #4f2dbf, gold #d4ab3c, ink #2f2a38, surface #f7f5fb,
+   fonts Aboreto (titles) + Poppins (body) */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Aboreto", "Cormorant Garamond", serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.9rem;
+
+  /* Surfaces */
+  --background: oklch(0.985 0.008 295); /* #f7f5fb */
+  --foreground: oklch(0.27 0.03 295); /* #2f2a38 ink */
+  --ink: oklch(0.27 0.03 295);
+  --surface: oklch(0.985 0.008 295);
+
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+
+  /* Primary = AuraLeve purple #4f2dbf */
+  --primary: oklch(0.41 0.21 285);
+  --primary-foreground: oklch(0.985 0.008 295);
+
+  /* Gold accent #d4ab3c */
+  --gold: oklch(0.78 0.13 85);
+  --gold-foreground: oklch(0.25 0.05 60);
+
+  --secondary: oklch(0.95 0.02 290);
+  --secondary-foreground: var(--foreground);
+
+  --muted: oklch(0.95 0.015 290);
+  --muted-foreground: oklch(0.5 0.03 290); /* #6f687d */
+
+  --accent: oklch(0.93 0.04 290);
+  --accent-foreground: var(--primary);
+
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.985 0.008 295);
+
+  --border: oklch(0.92 0.015 290);
+  --input: oklch(0.92 0.015 290);
+  --ring: oklch(0.41 0.21 285);
+
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.95 0.02 290);
+  --sidebar-accent-foreground: var(--primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+
+  /* AuraLeve gradients & shadows */
+  --gradient-aura: linear-gradient(135deg, oklch(0.41 0.21 285) 0%, oklch(0.55 0.22 305) 100%);
+  --gradient-soft: linear-gradient(180deg, oklch(0.985 0.012 295) 0%, oklch(0.94 0.025 290) 100%);
+  --shadow-aura: 0 12px 32px -10px oklch(0.41 0.21 285 / 0.25);
+  --shadow-card: 0 8px 24px -12px oklch(0.27 0.03 295 / 0.15);
+}
+
+.dark {
+  --background: oklch(0.18 0.02 295);
+  --foreground: oklch(0.97 0.01 295);
+  --card: oklch(0.22 0.025 295);
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.22 0.025 295);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.7 0.18 290);
+  --primary-foreground: oklch(0.18 0.02 295);
+  --secondary: oklch(0.28 0.03 295);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.28 0.03 295);
+  --muted-foreground: oklch(0.7 0.02 295);
+  --accent: oklch(0.32 0.05 295);
+  --accent-foreground: var(--foreground);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.15);
+  --ring: oklch(0.7 0.18 290);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0;
+  }
+  h1,
+  h2,
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    line-height: 1.18;
+  }
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+  }
+  p,
+  li {
+    line-height: 1.7;
+  }
+}
+
+@layer components {
+  .aura-container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1rem;
+    max-width: 1200px;
+  }
+  @media (min-width: 768px) {
+    .aura-container {
+      padding-inline: 1.25rem;
+    }
+  }
+  .aura-eyebrow {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+  .aura-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4.5vw, 2.4rem);
+    color: var(--color-primary);
+    text-align: center;
+    margin-bottom: 0.75rem;
+  }
+}
