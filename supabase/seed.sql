@@ -74,7 +74,7 @@ on conflict (product_id, energy_id) do nothing;
 
 insert into public.coupons (id, code, type, value, min_order_total, starts_at, expires_at, max_uses, uses_count, one_per_customer, active, created_at, updated_at)
 values
-  ('604c0a2c-5388-434d-82c6-313d3ce43548'::uuid, 'AURA10', 'percent'::public.coupon_type, 10, 0, '2026-05-14T13:33:00+00:00'::timestamptz, '2026-05-15T14:34:00+00:00'::timestamptz, null, 0, true, true, '2026-05-14T14:34:10.058076+00:00'::timestamptz, '2026-05-14T14:34:10.058076+00:00'::timestamptz)
+  ('604c0a2c-5388-434d-82c6-313d3ce43548'::uuid, 'AURA10', 'percent'::public.coupon_type, 10, 0, null, null, null, 0, true, true, '2026-05-14T14:34:10.058076+00:00'::timestamptz, '2026-05-14T14:34:10.058076+00:00'::timestamptz)
 on conflict (id) do update set
   code = excluded.code,
   type = excluded.type,
