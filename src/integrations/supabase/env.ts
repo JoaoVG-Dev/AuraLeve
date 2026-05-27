@@ -1,4 +1,4 @@
-export const AURALEVE_SUPABASE_PROJECT_REF = "aucmhhqwrpcplozlnoeq";
+export const AURALEVE_SUPABASE_PROJECT_REF = "ecxqhaszqtxnrxjnmxps";
 
 export const SUPABASE_URL_ALIASES = ["SUPABASE_URL", "VITE_SUPABASE_URL"] as const;
 export const SUPABASE_PUBLISHABLE_KEY_ALIASES = [
