@@ -25,7 +25,14 @@ function ForgotPage() {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     setSubmitting(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      if (error.message.toLowerCase().includes("rate limit")) {
+        return toast.error(
+          "Limite temporario de envio de e-mails atingido. Tente novamente em alguns minutos.",
+        );
+      }
+      return toast.error(error.message);
+    }
     setSent(true);
     toast.success("Enviamos um link de redefinição para seu e-mail");
   };

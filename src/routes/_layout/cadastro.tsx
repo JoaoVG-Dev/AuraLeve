@@ -38,6 +38,11 @@ function SignupPage() {
     });
     setSubmitting(false);
     if (error) {
+      if (error.message.toLowerCase().includes("rate limit")) {
+        return toast.error(
+          "Limite temporario de envio de e-mails atingido. Tente novamente em alguns minutos.",
+        );
+      }
       const msg = error.message.includes("already registered")
         ? "Este e-mail já está cadastrado"
         : error.message;
