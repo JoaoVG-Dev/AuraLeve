@@ -12,7 +12,9 @@ function sanitizeValue(value: unknown, depth = 0): unknown {
 
   const sanitized: Record<string, unknown> = {};
   for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
-    sanitized[key] = SENSITIVE_KEY_PATTERN.test(key) ? "[redacted]" : sanitizeValue(nestedValue, depth + 1);
+    sanitized[key] = SENSITIVE_KEY_PATTERN.test(key)
+      ? "[redacted]"
+      : sanitizeValue(nestedValue, depth + 1);
   }
   return sanitized;
 }
@@ -21,7 +23,11 @@ export function messageFromError(error: unknown) {
   return error instanceof Error ? error.message : String(error || "unknown");
 }
 
-export function logBackendEvent(level: LogLevel, event: string, context: Record<string, unknown> = {}) {
+export function logBackendEvent(
+  level: LogLevel,
+  event: string,
+  context: Record<string, unknown> = {},
+) {
   const payload = sanitizeValue(context);
   console[level](`[${event}]`, payload);
 }

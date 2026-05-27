@@ -47,17 +47,39 @@ function LoginPage() {
       <h1 className="aura-section-title text-center mb-8">Entrar</h1>
       <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <Field label="E-mail">
-          <input className="aura-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={255} />
+          <input
+            className="aura-input"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            maxLength={255}
+          />
         </Field>
         <Field label="Senha">
-          <input className="aura-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={72} />
+          <input
+            className="aura-input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            maxLength={72}
+          />
         </Field>
-        <button type="submit" disabled={submitting} className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
+        >
           {submitting ? "Entrando..." : "Entrar"}
         </button>
         <div className="flex justify-between text-xs text-muted-foreground pt-2">
-          <Link to="/recuperar-senha" className="hover:text-primary">Esqueci minha senha</Link>
-          <Link to="/cadastro" className="hover:text-primary">Criar conta</Link>
+          <Link to="/recuperar-senha" className="hover:text-primary">
+            Esqueci minha senha
+          </Link>
+          <Link to="/cadastro" className="hover:text-primary">
+            Criar conta
+          </Link>
         </div>
       </form>
       <AuraInputStyle />
@@ -68,7 +90,9 @@ function LoginPage() {
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-1.5">{label}</span>
+      <span className="block text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-1.5">
+        {label}
+      </span>
       {children}
     </label>
   );

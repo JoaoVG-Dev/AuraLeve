@@ -1,12 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ProductCard } from "@/components/ProductCard";
-import {
-  useCategories,
-  useEnergies,
-  useProducts,
-  useSubcategories,
-} from "@/lib/catalog";
+import { useCategories, useEnergies, useProducts, useSubcategories } from "@/lib/catalog";
 import { normalize, finalPrice } from "@/lib/types";
 import { Search, X } from "lucide-react";
 import { z } from "zod";
@@ -98,10 +93,7 @@ function CatalogPage() {
         );
         break;
       default:
-        sorted.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
+        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     return sorted;
   }, [products, cat, search.sub, search.energia, nQ, order, subcategories, energies, categories]);
@@ -109,9 +101,7 @@ function CatalogPage() {
   const suggestions = useMemo(() => {
     if (!qInput.trim()) return [];
     const n = normalize(qInput);
-    return products
-      .filter((p) => normalize(p.name).includes(n))
-      .slice(0, 5);
+    return products.filter((p) => normalize(p.name).includes(n)).slice(0, 5);
   }, [qInput, products]);
 
   const setFilter = (key: keyof typeof search, value?: string) =>
@@ -119,7 +109,13 @@ function CatalogPage() {
       search: (prev: typeof search) => ({ ...prev, [key]: value || undefined }),
     });
 
-  const hasFilters = !!(search.categoria || search.sub || search.energia || debouncedQ || search.ordem);
+  const hasFilters = !!(
+    search.categoria ||
+    search.sub ||
+    search.energia ||
+    debouncedQ ||
+    search.ordem
+  );
 
   const clearAll = () => {
     setQInput("");
@@ -192,7 +188,9 @@ function CatalogPage() {
           <span className="uppercase tracking-[0.18em] text-primary font-semibold">Ordenar</span>
           <select
             value={order}
-            onChange={(e) => setFilter("ordem", e.target.value === "recentes" ? undefined : e.target.value)}
+            onChange={(e) =>
+              setFilter("ordem", e.target.value === "recentes" ? undefined : e.target.value)
+            }
             className="rounded-full border border-border bg-card px-3 py-1.5 text-xs focus:outline-none focus:border-primary"
           >
             <option value="recentes">Mais recentes</option>
@@ -238,9 +236,7 @@ function CatalogPage() {
 
       {filtered.length === 0 ? (
         <div className="text-center py-20">
-          <h3 className="font-display text-2xl text-primary mb-2">
-            Nenhuma peça encontrada
-          </h3>
+          <h3 className="font-display text-2xl text-primary mb-2">Nenhuma peça encontrada</h3>
           <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
             Tente ajustar a busca ou explorar outra energia.
           </p>
@@ -281,7 +277,9 @@ function FilterGroup({
         {label}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Chip active={!value} onClick={() => onChange(undefined)}>Todas</Chip>
+        <Chip active={!value} onClick={() => onChange(undefined)}>
+          Todas
+        </Chip>
         {options.map((o) => (
           <Chip key={o.value} active={value === o.value} onClick={() => onChange(o.value)}>
             {o.label}

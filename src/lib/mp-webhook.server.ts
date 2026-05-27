@@ -1,4 +1,8 @@
-import { applyPaymentStatusToOrder, fetchPayment, validateMercadoPagoCredentials } from "@/lib/mercadopago.server";
+import {
+  applyPaymentStatusToOrder,
+  fetchPayment,
+  validateMercadoPagoCredentials,
+} from "@/lib/mercadopago.server";
 import { logBackendEvent, messageFromError } from "@/lib/observability.server";
 
 export const MP_WEBHOOK_PATH = "/api/public/mp-webhook";
@@ -116,7 +120,8 @@ export async function handleMercadoPagoWebhook(request: Request) {
   if (!(await hasValidWebhookAuthentication(request, url))) {
     logBackendEvent("warn", "mp-webhook.unauthorized", {
       hasQuerySecret: url.searchParams.has("secret"),
-      hasHeaderSecret: request.headers.has("x-mp-secret") || request.headers.has("x-webhook-secret"),
+      hasHeaderSecret:
+        request.headers.has("x-mp-secret") || request.headers.has("x-webhook-secret"),
       hasSignature: request.headers.has("x-signature"),
       hasRequestId: request.headers.has("x-request-id"),
     });
@@ -152,7 +157,9 @@ export async function handleMercadoPagoWebhook(request: Request) {
     const payment = await fetchPayment(String(paymentId));
     const orderId = payment?.external_reference;
     if (!orderId) {
-      logBackendEvent("info", "mp-webhook.payment_without_external_reference", { paymentId: String(paymentId) });
+      logBackendEvent("info", "mp-webhook.payment_without_external_reference", {
+        paymentId: String(paymentId),
+      });
       return new Response("no external_reference", { status: 200 });
     }
 

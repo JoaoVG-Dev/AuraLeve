@@ -11,14 +11,7 @@ import type { Product } from "@/lib/types";
 import { finalPrice, formatBRL, slugify } from "@/lib/types";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react";
+import { AlertTriangle, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import {
   AdminBadge,
   AdminEmptyState,

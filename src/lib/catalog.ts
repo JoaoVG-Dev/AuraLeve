@@ -69,10 +69,7 @@ export function useCategories() {
   return useQuery({
     queryKey: QK.categories,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("name");
+      const { data, error } = await supabase.from("categories").select("*").order("name");
       if (error) throw error;
       return data.map(mapCategory);
     },
@@ -83,10 +80,7 @@ export function useSubcategories() {
   return useQuery({
     queryKey: QK.subcategories,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subcategories")
-        .select("*")
-        .order("name");
+      const { data, error } = await supabase.from("subcategories").select("*").order("name");
       if (error) throw error;
       return data.map(mapSubcategory);
     },
@@ -97,10 +91,7 @@ export function useEnergies() {
   return useQuery({
     queryKey: QK.energies,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("energies")
-        .select("*")
-        .order("name");
+      const { data, error } = await supabase.from("energies").select("*").order("name");
       if (error) throw error;
       return data.map(mapEnergy);
     },
@@ -167,7 +158,9 @@ export function useDeleteCategory() {
 export function useSaveSubcategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (s: Partial<Subcategory> & { name: string; slug: string; categoryId: string }) => {
+    mutationFn: async (
+      s: Partial<Subcategory> & { name: string; slug: string; categoryId: string },
+    ) => {
       const payload = { name: s.name, slug: s.slug, category_id: s.categoryId };
       if (s.id) {
         const { error } = await supabase.from("subcategories").update(payload).eq("id", s.id);
@@ -278,7 +271,9 @@ export function useDeleteProduct() {
 export function useSaveCoupon() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (c: Partial<Coupon> & { code: string; type: "percent" | "fixed"; value: number }) => {
+    mutationFn: async (
+      c: Partial<Coupon> & { code: string; type: "percent" | "fixed"; value: number },
+    ) => {
       const payload = {
         code: c.code.trim().toUpperCase(),
         type: c.type,
@@ -379,7 +374,10 @@ export function useOrderDetail(orderId: string | undefined) {
       ]);
       if (e1) throw e1;
       if (e2) throw e2;
-      return { order: order as unknown as OrderRow | null, items: (items ?? []) as unknown as OrderItemRow[] };
+      return {
+        order: order as unknown as OrderRow | null,
+        items: (items ?? []) as unknown as OrderItemRow[],
+      };
     },
   });
 }

@@ -252,7 +252,9 @@ function OrderAdminDetail({ orderId, onBack }: { orderId: string; onBack: () => 
                   value={currentPayment}
                   onChange={(e) => setPaymentStatus(e.target.value)}
                 >
-                  {currentPayment === "paid" && <option value="paid">Pago pelo Mercado Pago</option>}
+                  {currentPayment === "paid" && (
+                    <option value="paid">Pago pelo Mercado Pago</option>
+                  )}
                   {PAYMENT_STATUSES.map((s) => (
                     <option key={s} value={s}>
                       {ADMIN_PAYMENT_LABEL[s]}

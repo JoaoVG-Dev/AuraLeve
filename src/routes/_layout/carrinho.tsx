@@ -25,7 +25,11 @@ function CartPage() {
   );
 
   if (isLoading && cart.length > 0) {
-    return <div className="aura-container py-16 text-center text-muted-foreground">Carregando carrinho...</div>;
+    return (
+      <div className="aura-container py-16 text-center text-muted-foreground">
+        Carregando carrinho...
+      </div>
+    );
   }
 
   if (items.length === 0) {
@@ -35,7 +39,10 @@ function CartPage() {
         <p className="text-muted-foreground mb-6">
           Que tal explorar o catálogo e encontrar sua próxima companheira de meditação?
         </p>
-        <Link to="/catalogo" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">
+        <Link
+          to="/catalogo"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground"
+        >
           Ver catálogo
         </Link>
       </div>
@@ -55,16 +62,27 @@ function CartPage() {
           {items.map(({ product, quantity }) => {
             const fp = finalPrice(product);
             return (
-              <div key={product.id} className="flex gap-4 rounded-2xl border border-border bg-card p-4">
+              <div
+                key={product.id}
+                className="flex gap-4 rounded-2xl border border-border bg-card p-4"
+              >
                 {product.image ? (
-                  <img src={product.image} alt={product.name} className="h-24 w-24 rounded-xl object-cover" />
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-24 w-24 rounded-xl object-cover"
+                  />
                 ) : (
                   <div className="grid h-24 w-24 shrink-0 place-items-center rounded-xl bg-muted text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                     AuraLeve
                   </div>
                 )}
                 <div className="flex-1">
-                  <Link to="/produto/$slug" params={{ slug: product.slug }} className="font-semibold hover:text-primary">
+                  <Link
+                    to="/produto/$slug"
+                    params={{ slug: product.slug }}
+                    className="font-semibold hover:text-primary"
+                  >
                     {product.name}
                   </Link>
                   <div className="text-sm text-muted-foreground mt-1">{formatBRL(fp)} cada</div>
@@ -77,7 +95,12 @@ function CartPage() {
                   )}
                   <div className="mt-3 flex items-center gap-3">
                     <div className="inline-flex items-center rounded-full border border-border">
-                      <button onClick={() => setQty(product.id, quantity - 1)} className="px-3 py-1 text-primary">−</button>
+                      <button
+                        onClick={() => setQty(product.id, quantity - 1)}
+                        className="px-3 py-1 text-primary"
+                      >
+                        −
+                      </button>
                       <span className="w-8 text-center text-sm">{quantity}</span>
                       <button
                         onClick={() => setQty(product.id, Math.min(product.stock, quantity + 1))}
@@ -87,12 +110,18 @@ function CartPage() {
                         +
                       </button>
                     </div>
-                    <button onClick={() => handleRemove(product.id)} className="text-muted-foreground hover:text-destructive" aria-label="Remover">
+                    <button
+                      onClick={() => handleRemove(product.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Remover"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-                <div className="text-right font-semibold text-primary">{formatBRL(fp * quantity)}</div>
+                <div className="text-right font-semibold text-primary">
+                  {formatBRL(fp * quantity)}
+                </div>
               </div>
             );
           })}
@@ -117,7 +146,10 @@ function CartPage() {
               Ajuste os itens indisponíveis antes de finalizar a compra.
             </p>
           ) : (
-            <Link to="/checkout" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95">
+            <Link
+              to="/checkout"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95"
+            >
               Finalizar compra <ArrowRight className="h-4 w-4" />
             </Link>
           )}

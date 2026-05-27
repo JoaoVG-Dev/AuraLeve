@@ -9,7 +9,10 @@ export const Route = createFileRoute("/_layout/acesso-negado")({
       <p className="text-muted-foreground mb-6">
         Esta área é restrita a administradores da AuraLeve.
       </p>
-      <Link to="/" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground">
+      <Link
+        to="/"
+        className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground"
+      >
         Voltar à home
       </Link>
     </div>

@@ -8,7 +8,14 @@ import type { Database } from "@/integrations/supabase/types";
 type OrderStatus = Database["public"]["Enums"]["order_status"];
 type PaymentStatus = Database["public"]["Enums"]["payment_status"];
 
-const orderStatuses = ["pending", "paid", "processing", "shipped", "delivered", "cancelled"] as const;
+const orderStatuses = [
+  "pending",
+  "paid",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+] as const;
 const adminPaymentStatuses = ["pending", "failed", "refunded", "expired"] as const;
 const orderStatusRank: Record<OrderStatus, number> = {
   pending: 0,
@@ -54,16 +61,24 @@ function orderErrorMessage(message: string) {
 
   if (normalized.includes("coupon expired")) return "Este cupom expirou.";
   if (normalized.includes("coupon inactive")) return "Cupom inválido ou inativo.";
-  if (normalized.includes("coupon is not valid yet")) return "Este cupom ainda não está disponível.";
-  if (normalized.includes("coupon usage limit reached")) return "Este cupom atingiu o limite de uso.";
-  if (normalized.includes("coupon already used by customer")) return "Este cupom não está mais disponível.";
+  if (normalized.includes("coupon is not valid yet"))
+    return "Este cupom ainda não está disponível.";
+  if (normalized.includes("coupon usage limit reached"))
+    return "Este cupom atingiu o limite de uso.";
+  if (normalized.includes("coupon already used by customer"))
+    return "Este cupom não está mais disponível.";
   if (normalized.includes("coupon not found")) return "Cupom inválido ou inativo.";
-  if (normalized.includes("coupon minimum order total")) return "O pedido não atingiu o valor mínimo deste cupom.";
-  if (normalized.includes("insufficient stock")) return "Um dos produtos não tem estoque suficiente.";
+  if (normalized.includes("coupon minimum order total"))
+    return "O pedido não atingiu o valor mínimo deste cupom.";
+  if (normalized.includes("insufficient stock"))
+    return "Um dos produtos não tem estoque suficiente.";
   if (normalized.includes("product not found")) return "Um dos produtos não está mais disponível.";
-  if (normalized.includes("product not available")) return "Um dos produtos não está disponível para compra.";
-  if (normalized.includes("invalid product discount")) return "Um dos produtos tem uma regra de preço inválida.";
-  if (normalized.includes("invalid quantity")) return "A quantidade de um item do carrinho é inválida.";
+  if (normalized.includes("product not available"))
+    return "Um dos produtos não está disponível para compra.";
+  if (normalized.includes("invalid product discount"))
+    return "Um dos produtos tem uma regra de preço inválida.";
+  if (normalized.includes("invalid quantity"))
+    return "A quantidade de um item do carrinho é inválida.";
   if (normalized.includes("invalid order total")) return "O total do pedido é inválido.";
   if (normalized.includes("invalid payment method")) return "Forma de pagamento inválida.";
   if (normalized.includes("empty cart")) return "Seu carrinho está vazio.";
@@ -150,10 +165,7 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       update.canceled_at = new Date().toISOString();
     }
 
-    const { error } = await supabaseAdmin
-      .from("orders")
-      .update(update)
-      .eq("id", data.orderId);
+    const { error } = await supabaseAdmin.from("orders").update(update).eq("id", data.orderId);
 
     if (error) throw new Error(error.message);
 

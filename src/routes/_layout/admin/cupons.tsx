@@ -170,67 +170,67 @@ function CouponsAdmin() {
                   const status = getCouponStatus(c);
 
                   return (
-                  <tr key={c.id} className="transition hover:bg-accent/30">
-                    <td
-                      className={cn(
-                        adminTableCellClass,
-                        "font-semibold uppercase tracking-wider text-foreground",
-                      )}
-                    >
-                      {c.code}
-                    </td>
-                    <td className={adminTableCellClass}>
-                      {c.type === "percent" ? `${c.value}%` : formatBRL(c.value)}
-                    </td>
-                    <td className={cn(adminTableCellClass, "text-muted-foreground")}>
-                      {c.minOrderTotal > 0 ? formatBRL(c.minOrderTotal) : "Sem mínimo"}
-                    </td>
-                    <td className={cn(adminTableCellClass, "text-muted-foreground")}>
-                      <div>
-                        {c.expiresAt
-                          ? new Date(c.expiresAt).toLocaleDateString("pt-BR")
-                          : "Sem validade"}
-                      </div>
-                      {c.startsAt ? (
-                        <div className="mt-0.5 text-[11px]">
-                          Início: {new Date(c.startsAt).toLocaleDateString("pt-BR")}
+                    <tr key={c.id} className="transition hover:bg-accent/30">
+                      <td
+                        className={cn(
+                          adminTableCellClass,
+                          "font-semibold uppercase tracking-wider text-foreground",
+                        )}
+                      >
+                        {c.code}
+                      </td>
+                      <td className={adminTableCellClass}>
+                        {c.type === "percent" ? `${c.value}%` : formatBRL(c.value)}
+                      </td>
+                      <td className={cn(adminTableCellClass, "text-muted-foreground")}>
+                        {c.minOrderTotal > 0 ? formatBRL(c.minOrderTotal) : "Sem mínimo"}
+                      </td>
+                      <td className={cn(adminTableCellClass, "text-muted-foreground")}>
+                        <div>
+                          {c.expiresAt
+                            ? new Date(c.expiresAt).toLocaleDateString("pt-BR")
+                            : "Sem validade"}
                         </div>
-                      ) : null}
-                    </td>
-                    <td className={cn(adminTableCellClass, "text-muted-foreground")}>
-                      {c.usesCount}
-                      {c.maxUses !== null ? ` / ${c.maxUses}` : ""}
-                    </td>
-                    <td className={adminTableCellClass}>
-                      <button
-                        onClick={() => toggleActive(c)}
-                        className="text-left"
-                        title="Alternar ativação manual do cupom"
-                      >
-                        <AdminBadge tone={couponTone[status]}>
-                          {COUPON_STATUS_LABEL[status]}
-                        </AdminBadge>
-                        <span className="mt-1 block text-[11px] text-muted-foreground">
-                          {couponDescription(c)}
-                        </span>
-                      </button>
-                    </td>
-                    <td className={cn(adminTableCellClass, "text-right")}>
-                      <AdminIconButton
-                        onClick={() => setEditing({ ...c })}
-                        aria-label={`Editar cupom ${c.code}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </AdminIconButton>
-                      <AdminIconButton
-                        onClick={() => remove(c.id)}
-                        aria-label={`Excluir cupom ${c.code}`}
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </AdminIconButton>
-                    </td>
-                  </tr>
+                        {c.startsAt ? (
+                          <div className="mt-0.5 text-[11px]">
+                            Início: {new Date(c.startsAt).toLocaleDateString("pt-BR")}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className={cn(adminTableCellClass, "text-muted-foreground")}>
+                        {c.usesCount}
+                        {c.maxUses !== null ? ` / ${c.maxUses}` : ""}
+                      </td>
+                      <td className={adminTableCellClass}>
+                        <button
+                          onClick={() => toggleActive(c)}
+                          className="text-left"
+                          title="Alternar ativação manual do cupom"
+                        >
+                          <AdminBadge tone={couponTone[status]}>
+                            {COUPON_STATUS_LABEL[status]}
+                          </AdminBadge>
+                          <span className="mt-1 block text-[11px] text-muted-foreground">
+                            {couponDescription(c)}
+                          </span>
+                        </button>
+                      </td>
+                      <td className={cn(adminTableCellClass, "text-right")}>
+                        <AdminIconButton
+                          onClick={() => setEditing({ ...c })}
+                          aria-label={`Editar cupom ${c.code}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </AdminIconButton>
+                        <AdminIconButton
+                          onClick={() => remove(c.id)}
+                          aria-label={`Excluir cupom ${c.code}`}
+                          className="hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </AdminIconButton>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>

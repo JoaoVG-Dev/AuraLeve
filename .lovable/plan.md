@@ -44,6 +44,7 @@ Vou executar a evolução em 3 fases. Esta é a Fase 1 — fundação. Fases 2 e
 7. **Como criar o primeiro admin**: vou documentar (e fazer no chat após a entrega) o INSERT em `user_roles` via Cloud para promover o seu usuário a admin. Não exponho criação de admin pelo front.
 
 ### O que NÃO entra nesta fase
+
 - Migração de produtos/categorias/cupons/energias para o banco (Fase 2).
 - Checkout real, pedidos, pagamentos, cupons aplicáveis (Fase 3).
 - Busca melhorada com debounce (Fase 2).
@@ -52,6 +53,7 @@ Vou executar a evolução em 3 fases. Esta é a Fase 1 — fundação. Fases 2 e
 Carrinho e admin de produtos continuam em Zustand/localStorage até a Fase 2 — o site continua usável durante a transição.
 
 ### Detalhes técnicos
+
 - Auth: Supabase Auth via cliente do browser (`@/integrations/supabase/client`). Auto-confirm de email habilitado para testes (sem clicar em link).
 - Roles checadas via RPC `has_role` chamada após login para popular `isAdmin` no contexto.
 - `beforeLoad` em `_admin` chama `has_role`; se falhar, `redirect({to: '/login'})` ou `/acesso-negado`.

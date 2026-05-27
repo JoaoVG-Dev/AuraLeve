@@ -1,5 +1,13 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { ShoppingBag, Search, Menu, X, User as UserIcon, LogOut, LayoutDashboard } from "lucide-react";
+import {
+  ShoppingBag,
+  Search,
+  Menu,
+  X,
+  User as UserIcon,
+  LogOut,
+  LayoutDashboard,
+} from "lucide-react";
 import { useState } from "react";
 import { useShop } from "@/lib/store";
 import { useAuth, signOut } from "@/hooks/use-auth";
@@ -92,7 +100,9 @@ export function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-card shadow-lg z-50 overflow-hidden">
                     <div className="px-4 py-3 border-b border-border">
                       <div className="text-xs text-muted-foreground">Conectada como</div>
-                      <div className="text-sm font-medium text-foreground line-clamp-1">{user.email}</div>
+                      <div className="text-sm font-medium text-foreground line-clamp-1">
+                        {user.email}
+                      </div>
                     </div>
                     <Link
                       to="/minha-conta"

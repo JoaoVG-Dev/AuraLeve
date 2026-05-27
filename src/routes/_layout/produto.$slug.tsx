@@ -20,7 +20,9 @@ function ProductPage() {
   const [qty, setQty] = useState(1);
 
   if (isLoading) {
-    return <div className="aura-container py-24 text-center text-muted-foreground">Carregando...</div>;
+    return (
+      <div className="aura-container py-24 text-center text-muted-foreground">Carregando...</div>
+    );
   }
 
   if (!product) {
@@ -35,9 +37,7 @@ function ProductPage() {
   }
 
   const cat = categories.find((c) => c.id === product.categoryId);
-  const ens = product.energyIds
-    .map((id) => energies.find((e) => e.id === id))
-    .filter(Boolean);
+  const ens = product.energyIds.map((id) => energies.find((e) => e.id === id)).filter(Boolean);
   const onSale = product.discountPercent > 0;
   const fp = finalPrice(product);
   const cartQty = cart.find((item) => item.productId === product.id)?.quantity ?? 0;
@@ -49,14 +49,21 @@ function ProductPage() {
 
   return (
     <div className="aura-container py-12">
-      <Link to="/catalogo" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6">
+      <Link
+        to="/catalogo"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6"
+      >
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 
       <div className="grid md:grid-cols-2 gap-10">
         <div className="rounded-2xl overflow-hidden bg-[var(--gradient-soft)] border border-border">
           {product.image ? (
-            <img src={product.image} alt={product.name} className="w-full h-full object-cover aspect-square" />
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full h-full object-cover aspect-square"
+            />
           ) : (
             <div className="grid aspect-square place-items-center px-6 text-center font-display text-2xl text-primary">
               AuraLeve
@@ -74,7 +81,9 @@ function ProductPage() {
 
           <div className="flex items-baseline gap-3 mb-6">
             {onSale && (
-              <span className="text-base text-muted-foreground line-through">{formatBRL(product.price)}</span>
+              <span className="text-base text-muted-foreground line-through">
+                {formatBRL(product.price)}
+              </span>
             )}
             <span className="text-3xl font-semibold text-primary">{formatBRL(fp)}</span>
             {onSale && (
@@ -93,7 +102,10 @@ function ProductPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {ens.map((e) => (
-                  <span key={e!.id} className="rounded-full border border-border bg-accent text-primary px-3 py-1 text-xs font-medium">
+                  <span
+                    key={e!.id}
+                    className="rounded-full border border-border bg-accent text-primary px-3 py-1 text-xs font-medium"
+                  >
                     {e!.name}
                   </span>
                 ))}
@@ -104,7 +116,12 @@ function ProductPage() {
           <div className="flex items-center gap-3 mb-6">
             <label className="text-sm text-muted-foreground">Quantidade</label>
             <div className="inline-flex items-center rounded-full border border-border">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-1.5 text-primary">−</button>
+              <button
+                onClick={() => setQty((q) => Math.max(1, q - 1))}
+                className="px-3 py-1.5 text-primary"
+              >
+                −
+              </button>
               <span className="w-8 text-center text-sm">{qty}</span>
               <button
                 onClick={() => setQty((q) => Math.min(Math.max(1, availableToAdd), q + 1))}

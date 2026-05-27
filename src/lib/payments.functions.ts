@@ -77,14 +77,19 @@ export const payWithCard = createServerFn({ method: "POST" })
     const order = await loadOrderForPayment(data.orderId, context.userId);
     if (order.payment_method !== data.kind) throw new Error("Forma de pagamento divergente");
     try {
-      return await processCardPayment(order, {
-        token: data.token,
-        paymentMethodId: data.paymentMethodId,
-        issuerId: data.issuerId,
-        installments: data.installments,
-        payerEmail: data.payerEmail,
-        identification: data.identification,
-      }, data.kind, resolveWebhookUrl());
+      return await processCardPayment(
+        order,
+        {
+          token: data.token,
+          paymentMethodId: data.paymentMethodId,
+          issuerId: data.issuerId,
+          installments: data.installments,
+          payerEmail: data.payerEmail,
+          identification: data.identification,
+        },
+        data.kind,
+        resolveWebhookUrl(),
+      );
     } catch (error) {
       logBackendEvent("warn", "payment.card.failed", {
         orderId: data.orderId,

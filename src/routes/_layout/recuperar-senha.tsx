@@ -48,15 +48,28 @@ function ForgotPage() {
         ) : (
           <>
             <Field label="E-mail">
-              <input className="aura-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={255} />
+              <input
+                className="aura-input"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                maxLength={255}
+              />
             </Field>
-            <button type="submit" disabled={submitting} className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
+            >
               {submitting ? "Enviando..." : "Enviar link"}
             </button>
           </>
         )}
         <p className="text-xs text-center text-muted-foreground pt-2">
-          <Link to="/login" className="text-primary hover:underline">Voltar ao login</Link>
+          <Link to="/login" className="text-primary hover:underline">
+            Voltar ao login
+          </Link>
         </p>
       </form>
       <AuraInputStyle />

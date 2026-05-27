@@ -39,12 +39,30 @@ function ResetPage() {
       <h1 className="aura-section-title text-center mb-8">Nova senha</h1>
       <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <Field label="Nova senha">
-          <input className="aura-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={72} />
+          <input
+            className="aura-input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            maxLength={72}
+          />
         </Field>
         <Field label="Confirmar nova senha">
-          <input className="aura-input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required maxLength={72} />
+          <input
+            className="aura-input"
+            type="password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            required
+            maxLength={72}
+          />
         </Field>
-        <button type="submit" disabled={submitting} className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
+        >
           {submitting ? "Salvando..." : "Salvar nova senha"}
         </button>
       </form>

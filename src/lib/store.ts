@@ -35,9 +35,7 @@ export const useShop = create<ShopState>()(
         set((s) => ({
           cart: s.cart
             .map((c) =>
-              c.productId === productId
-                ? { ...c, quantity: Math.min(99, Math.floor(qty)) }
-                : c,
+              c.productId === productId ? { ...c, quantity: Math.min(99, Math.floor(qty)) } : c,
             )
             .filter((c) => c.quantity > 0),
         })),

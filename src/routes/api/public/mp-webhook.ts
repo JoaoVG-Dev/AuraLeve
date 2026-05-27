@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { handleMercadoPagoWebhook, mercadoPagoWebhookMethodNotAllowed } from "@/lib/mp-webhook.server";
+import {
+  handleMercadoPagoWebhook,
+  mercadoPagoWebhookMethodNotAllowed,
+} from "@/lib/mp-webhook.server";
 
 // Mercado Pago webhook receiver. Configure this URL in your MP application:
 //   https://<your-domain>/api/public/mp-webhook

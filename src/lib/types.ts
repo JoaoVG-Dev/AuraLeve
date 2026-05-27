@@ -71,15 +71,10 @@ export function getCouponStatus(
   return "active";
 }
 
-export function couponDiscount(
-  coupon: Pick<Coupon, "type" | "value">,
-  subtotal: number,
-) {
+export function couponDiscount(coupon: Pick<Coupon, "type" | "value">, subtotal: number) {
   const safeSubtotal = Math.max(0, subtotal);
   const raw =
-    coupon.type === "percent"
-      ? +(safeSubtotal * (coupon.value / 100)).toFixed(2)
-      : coupon.value;
+    coupon.type === "percent" ? +(safeSubtotal * (coupon.value / 100)).toFixed(2) : coupon.value;
 
   return Math.min(Math.max(0, raw), safeSubtotal);
 }
@@ -103,9 +98,7 @@ export interface CustomerInfo {
 }
 
 export const finalPrice = (p: Pick<Product, "price" | "discountPercent">) =>
-  p.discountPercent > 0
-    ? +(p.price * (1 - p.discountPercent / 100)).toFixed(2)
-    : p.price;
+  p.discountPercent > 0 ? +(p.price * (1 - p.discountPercent / 100)).toFixed(2) : p.price;
 
 export const formatBRL = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -119,4 +112,7 @@ export const slugify = (s: string) =>
     .replace(/^-|-$/g, "");
 
 export const normalize = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");

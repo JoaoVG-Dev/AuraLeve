@@ -59,22 +59,56 @@ function SignupPage() {
       <h1 className="aura-section-title text-center mb-8">Criar conta</h1>
       <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
         <Field label="Nome completo">
-          <input className="aura-input" value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required maxLength={100} />
+          <input
+            className="aura-input"
+            value={form.fullName}
+            onChange={(e) => set("fullName", e.target.value)}
+            required
+            maxLength={100}
+          />
         </Field>
         <Field label="E-mail">
-          <input className="aura-input" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required maxLength={255} />
+          <input
+            className="aura-input"
+            type="email"
+            value={form.email}
+            onChange={(e) => set("email", e.target.value)}
+            required
+            maxLength={255}
+          />
         </Field>
         <Field label="Senha">
-          <input className="aura-input" type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required maxLength={72} />
+          <input
+            className="aura-input"
+            type="password"
+            value={form.password}
+            onChange={(e) => set("password", e.target.value)}
+            required
+            maxLength={72}
+          />
         </Field>
         <Field label="Confirmar senha">
-          <input className="aura-input" type="password" value={form.confirm} onChange={(e) => set("confirm", e.target.value)} required maxLength={72} />
+          <input
+            className="aura-input"
+            type="password"
+            value={form.confirm}
+            onChange={(e) => set("confirm", e.target.value)}
+            required
+            maxLength={72}
+          />
         </Field>
-        <button type="submit" disabled={submitting} className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
+        >
           {submitting ? "Criando..." : "Criar conta"}
         </button>
         <p className="text-xs text-center text-muted-foreground pt-2">
-          Já tem conta? <Link to="/login" className="text-primary hover:underline">Entrar</Link>
+          Já tem conta?{" "}
+          <Link to="/login" className="text-primary hover:underline">
+            Entrar
+          </Link>
         </p>
       </form>
       <AuraInputStyle />

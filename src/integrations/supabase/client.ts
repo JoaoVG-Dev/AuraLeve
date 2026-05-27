@@ -1,16 +1,16 @@
-import { createClient } from '@supabase/supabase-js';
-import { readSupabasePublicConfig } from './env';
-import type { Database } from './types';
+import { createClient } from "@supabase/supabase-js";
+import { readSupabasePublicConfig } from "./env";
+import type { Database } from "./types";
 
 function createSupabaseClient() {
   const { url, publishableKey } = readSupabasePublicConfig();
 
   return createClient<Database>(url, publishableKey, {
     auth: {
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
+      storage: typeof window !== "undefined" ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
-    }
+    },
   });
 }
 
@@ -24,4 +24,3 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
     return Reflect.get(_supabase, prop, receiver);
   },
 });
-
