@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_layout/admin")({
+  ssr: false,
   beforeLoad: async ({ location }) => {
     const {
       data: { session },
