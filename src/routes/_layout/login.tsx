@@ -1,9 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { Eye, Lock, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { AuraLeveLogo, AuraLeveSymbol } from "@/components/AuraLeveLogo";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import heroBg from "@/assets/product-rosequartz.jpg";
 
 export const Route = createFileRoute("/_layout/login")({
   component: LoginPage,
@@ -43,74 +46,121 @@ function LoginPage() {
   };
 
   return (
-    <div className="aura-container py-16 max-w-md mx-auto">
-      <h1 className="aura-section-title text-center mb-8">Entrar</h1>
-      <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
-        <Field label="E-mail">
+    <AuthShell title="Bem-vinda de volta" subtitle="Entre na sua conta para continuar.">
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="E-mail" icon={<Mail className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="seu@email.com"
             required
             maxLength={255}
           />
         </Field>
-        <Field label="Senha">
+        <Field label="Senha" icon={<Lock className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10 pr-10"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
             required
             maxLength={72}
           />
+          <Eye className="pointer-events-none absolute right-3 top-[2.55rem] h-4 w-4 text-muted-foreground" />
         </Field>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
+        <Link
+          to="/recuperar-senha"
+          className="block text-xs font-semibold text-primary hover:text-foreground"
         >
+          Esqueci minha senha
+        </Link>
+        <button type="submit" disabled={submitting} className="aura-button w-full">
           {submitting ? "Entrando..." : "Entrar"}
         </button>
-        <div className="flex justify-between text-xs text-muted-foreground pt-2">
-          <Link to="/recuperar-senha" className="hover:text-primary">
-            Esqueci minha senha
-          </Link>
-          <Link to="/cadastro" className="hover:text-primary">
+        <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          ou continue com
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {["WhatsApp", "Google", "Apple"].map((item) => (
+            <button key={item} type="button" className="aura-button-outline min-h-10 px-3 py-2">
+              {item[0]}
+            </button>
+          ))}
+        </div>
+        <p className="pt-2 text-center text-xs text-muted-foreground">
+          Ainda não tem uma conta?{" "}
+          <Link to="/cadastro" className="font-semibold text-primary hover:text-foreground">
             Criar conta
           </Link>
-        </div>
+        </p>
       </form>
-      <AuraInputStyle />
+    </AuthShell>
+  );
+}
+
+export function AuthShell({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="aura-container py-10 md:py-16">
+      <div className="mx-auto grid max-w-5xl overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)] md:grid-cols-[1fr_1.05fr]">
+        <div className="relative min-h-72 md:min-h-[560px]">
+          <img
+            src={heroBg}
+            alt="Embalagem e acessórios AuraLeve"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/26 to-transparent" />
+          <div className="absolute left-6 top-6 rounded-lg bg-card/84 p-3 backdrop-blur">
+            <AuraLeveLogo />
+          </div>
+        </div>
+        <div className="relative flex items-center p-6 md:p-12">
+          <AuraLeveSymbol className="aura-symbol-watermark absolute right-7 top-20 h-72" />
+          <div className="relative w-full max-w-md">
+            <h1 className="font-display text-4xl text-foreground md:text-5xl">{title}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>
+            <div className="mt-7">{children}</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
+export function Field({
+  label,
+  icon,
+  children,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <label className="block">
-      <span className="block text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-1.5">
-        {label}
-      </span>
+    <label className="relative block">
+      <span className="aura-label">{label}</span>
+      {icon ? (
+        <span className="pointer-events-none absolute left-3 top-[2.55rem] text-muted-foreground">
+          {icon}
+        </span>
+      ) : null}
       {children}
     </label>
   );
 }
 
 export function AuraInputStyle() {
-  return (
-    <style>{`
-      .aura-input {
-        width: 100%; border-radius: 0.75rem; border: 1px solid var(--color-border);
-        background: var(--color-card); padding: 0.65rem 0.9rem; font-size: 0.875rem;
-        color: var(--color-foreground); outline: none;
-        transition: border-color .15s, box-shadow .15s;
-      }
-      .aura-input:focus {
-        border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 18%, transparent);
-      }
-    `}</style>
-  );
+  return null;
 }

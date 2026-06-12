@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Mail } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Field, AuthShell } from "./login";
 import { supabase } from "@/integrations/supabase/client";
-import { Field, AuraInputStyle } from "./login";
 
 export const Route = createFileRoute("/_layout/recuperar-senha")({
   component: ForgotPage,
@@ -28,7 +29,7 @@ function ForgotPage() {
     if (error) {
       if (error.message.toLowerCase().includes("rate limit")) {
         return toast.error(
-          "Limite temporario de envio de e-mails atingido. Tente novamente em alguns minutos.",
+          "Limite temporário de envio de e-mails atingido. Tente novamente em alguns minutos.",
         );
       }
       return toast.error(error.message);
@@ -38,41 +39,39 @@ function ForgotPage() {
   };
 
   return (
-    <div className="aura-container py-16 max-w-md mx-auto">
-      <h1 className="aura-section-title text-center mb-8">Recuperar senha</h1>
-      <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
+    <AuthShell
+      title="Recuperar senha"
+      subtitle="Informe seu e-mail para receber o link de recuperação."
+    >
+      <form onSubmit={submit} className="space-y-4">
         {sent ? (
-          <p className="text-sm text-muted-foreground text-center">
+          <p className="rounded-lg border border-border bg-champagne/45 p-4 text-center text-sm text-muted-foreground">
             Se este e-mail existir em nosso sistema, você receberá um link em instantes.
           </p>
         ) : (
           <>
-            <Field label="E-mail">
+            <Field label="E-mail" icon={<Mail className="h-4 w-4" />}>
               <input
-                className="aura-input"
+                className="aura-input pl-10"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
                 required
                 maxLength={255}
               />
             </Field>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
-            >
-              {submitting ? "Enviando..." : "Enviar link"}
+            <button type="submit" disabled={submitting} className="aura-button w-full">
+              {submitting ? "Enviando..." : "Enviar link de recuperação"}
             </button>
           </>
         )}
-        <p className="text-xs text-center text-muted-foreground pt-2">
-          <Link to="/login" className="text-primary hover:underline">
-            Voltar ao login
+        <p className="pt-2 text-center text-xs text-muted-foreground">
+          <Link to="/login" className="font-semibold text-primary hover:text-foreground">
+            Voltar para o login
           </Link>
         </p>
       </form>
-      <AuraInputStyle />
-    </div>
+    </AuthShell>
   );
 }

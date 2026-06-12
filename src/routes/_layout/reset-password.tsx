@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Lock } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Field, AuthShell } from "./login";
 import { supabase } from "@/integrations/supabase/client";
-import { Field, AuraInputStyle } from "./login";
 
 export const Route = createFileRoute("/_layout/reset-password")({
   component: ResetPage,
@@ -35,12 +36,11 @@ function ResetPage() {
   };
 
   return (
-    <div className="aura-container py-16 max-w-md mx-auto">
-      <h1 className="aura-section-title text-center mb-8">Nova senha</h1>
-      <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
-        <Field label="Nova senha">
+    <AuthShell title="Defina sua nova senha" subtitle="Escolha uma nova senha para sua conta.">
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="Nova senha" icon={<Lock className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -48,9 +48,14 @@ function ResetPage() {
             maxLength={72}
           />
         </Field>
-        <Field label="Confirmar nova senha">
+        <ul className="space-y-1 text-xs text-muted-foreground">
+          <li>Mínimo de 8 caracteres</li>
+          <li>Inclua letras e números</li>
+          <li>Não utilize dados pessoais</li>
+        </ul>
+        <Field label="Confirmar nova senha" icon={<Lock className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10"
             type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
@@ -58,15 +63,15 @@ function ResetPage() {
             maxLength={72}
           />
         </Field>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
-        >
-          {submitting ? "Salvando..." : "Salvar nova senha"}
+        <button type="submit" disabled={submitting} className="aura-button w-full">
+          {submitting ? "Salvando..." : "Alterar senha"}
         </button>
+        <p className="pt-2 text-center text-xs text-muted-foreground">
+          <Link to="/login" className="font-semibold text-primary hover:text-foreground">
+            Voltar para o login
+          </Link>
+        </p>
       </form>
-      <AuraInputStyle />
-    </div>
+    </AuthShell>
   );
 }

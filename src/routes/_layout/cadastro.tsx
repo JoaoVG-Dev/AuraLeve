@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Lock, Mail, User } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Field, AuthShell } from "./login";
 import { supabase } from "@/integrations/supabase/client";
-import { Field, AuraInputStyle } from "./login";
 
 export const Route = createFileRoute("/_layout/cadastro")({
   component: SignupPage,
@@ -40,7 +41,7 @@ function SignupPage() {
     if (error) {
       if (error.message.toLowerCase().includes("rate limit")) {
         return toast.error(
-          "Limite temporario de envio de e-mails atingido. Tente novamente em alguns minutos.",
+          "Limite temporário de envio de e-mails atingido. Tente novamente em alguns minutos.",
         );
       }
       const msg = error.message.includes("already registered")
@@ -55,63 +56,65 @@ function SignupPage() {
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
-    <div className="aura-container py-16 max-w-md mx-auto">
-      <h1 className="aura-section-title text-center mb-8">Criar conta</h1>
-      <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-6 space-y-4">
-        <Field label="Nome completo">
+    <AuthShell title="Crie sua conta" subtitle="Preencha seus dados para começar.">
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="Nome completo" icon={<User className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10"
             value={form.fullName}
             onChange={(e) => set("fullName", e.target.value)}
+            placeholder="Seu nome completo"
             required
             maxLength={100}
           />
         </Field>
-        <Field label="E-mail">
+        <Field label="E-mail" icon={<Mail className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10"
             type="email"
             value={form.email}
             onChange={(e) => set("email", e.target.value)}
+            placeholder="seu@email.com"
             required
             maxLength={255}
           />
         </Field>
-        <Field label="Senha">
+        <Field label="Senha" icon={<Lock className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10"
             type="password"
             value={form.password}
             onChange={(e) => set("password", e.target.value)}
+            placeholder="Crie uma senha"
             required
             maxLength={72}
           />
         </Field>
-        <Field label="Confirmar senha">
+        <Field label="Confirmar senha" icon={<Lock className="h-4 w-4" />}>
           <input
-            className="aura-input"
+            className="aura-input pl-10"
             type="password"
             value={form.confirm}
             onChange={(e) => set("confirm", e.target.value)}
+            placeholder="Confirme sua senha"
             required
             maxLength={72}
           />
         </Field>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
-        >
+        <label className="flex items-start gap-2 text-xs text-muted-foreground">
+          <input type="checkbox" required className="mt-0.5 accent-[var(--color-primary)]" />
+          Li e concordo com os Termos de Uso e Política de Privacidade.
+        </label>
+        <button type="submit" disabled={submitting} className="aura-button w-full">
           {submitting ? "Criando..." : "Criar conta"}
         </button>
-        <p className="text-xs text-center text-muted-foreground pt-2">
-          Já tem conta?{" "}
-          <Link to="/login" className="text-primary hover:underline">
+        <p className="pt-2 text-center text-xs text-muted-foreground">
+          Já tem uma conta?{" "}
+          <Link to="/login" className="font-semibold text-primary hover:text-foreground">
             Entrar
           </Link>
         </p>
       </form>
-      <AuraInputStyle />
-    </div>
+    </AuthShell>
   );
 }
