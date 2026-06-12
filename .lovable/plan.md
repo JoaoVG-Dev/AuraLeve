@@ -54,7 +54,7 @@ Carrinho e admin de produtos continuam em Zustand/localStorage até a Fase 2 —
 
 ### Detalhes técnicos
 
-- Auth: Supabase Auth via cliente do browser (`@/integrations/supabase/client`). Auto-confirm de email habilitado para testes (sem clicar em link).
+- Auth: sessao propria server-side com Neon, cookie HTTP-only e tabela `users`.
 - Roles checadas via RPC `has_role` chamada após login para popular `isAdmin` no contexto.
 - `beforeLoad` em `_admin` chama `has_role`; se falhar, `redirect({to: '/login'})` ou `/acesso-negado`.
 - Validação de formulários com Zod (já em uso no checkout).
