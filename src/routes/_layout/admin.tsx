@@ -11,25 +11,17 @@ import {
   Ticket,
 } from "lucide-react";
 import { AuraLeveLogo } from "@/components/AuraLeveLogo";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentAuthUser } from "@/lib/auth.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_layout/admin")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+    const user = await getCurrentAuthUser();
+    if (!user) {
       throw redirect({ to: "/login", search: { redirect: location.href } as never });
     }
-    const { data: role, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (error || role?.role !== "admin") {
+    if (user.role !== "admin") {
       throw redirect({ to: "/acesso-negado" });
     }
   },
