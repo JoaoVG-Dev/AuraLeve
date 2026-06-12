@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Eye, Lock, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { AuraLeveLogo, AuraLeveSymbol } from "@/components/AuraLeveLogo";
-import { useAuth } from "@/hooks/use-auth";
-import { supabase } from "@/integrations/supabase/client";
+import { setAuthenticatedUser, useAuth } from "@/hooks/use-auth";
+import { login } from "@/lib/auth.functions";
 import heroBg from "@/assets/product-rosequartz.jpg";
 
 export const Route = createFileRoute("/_layout/login")({
@@ -20,29 +21,37 @@ const schema = z.object({
 function LoginPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const loginServer = useServerFn(login);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/minha-conta" });
+    if (!loading && user) navigate({ to: user.role === "admin" ? "/admin" : "/minha-conta" });
   }, [user, loading, navigate]);
+
+  const redirectTarget = (role?: string) => {
+    const fallback = role === "admin" ? "/admin" : "/minha-conta";
+    if (typeof window === "undefined") return fallback;
+    const redirect = new URLSearchParams(window.location.search).get("redirect");
+    return redirect?.startsWith("/") ? redirect : fallback;
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword(parsed.data);
-    setSubmitting(false);
-    if (error) {
-      const msg = error.message.includes("Invalid login")
-        ? "E-mail ou senha incorretos"
-        : error.message;
-      return toast.error(msg);
+    try {
+      const loggedUser = await loginServer({ data: parsed.data });
+      setAuthenticatedUser(loggedUser);
+      toast.success("Bem-vinda de volta à AuraLeve");
+      navigate({ to: redirectTarget(loggedUser.role) });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "E-mail ou senha incorretos");
+    } finally {
+      setSubmitting(false);
     }
-    toast.success("Bem-vinda de volta à AuraLeve");
-    navigate({ to: "/minha-conta" });
   };
 
   return (

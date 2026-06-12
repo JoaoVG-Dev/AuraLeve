@@ -1,77 +1,63 @@
 import { useEffect, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import type { AuthUser } from "@/lib/auth/types";
+import { getCurrentAuthUser, logout } from "@/lib/auth.functions";
 
 interface AuthState {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   isAdmin: boolean;
   loading: boolean;
 }
 
 const listeners = new Set<(s: AuthState) => void>();
-let state: AuthState = { user: null, session: null, isAdmin: false, loading: true };
-let initialized = false;
+let state: AuthState = { user: null, isAdmin: false, loading: true };
 
 const setState = (next: Partial<AuthState>) => {
   state = { ...state, ...next };
-  listeners.forEach((l) => l(state));
+  listeners.forEach((listener) => listener(state));
 };
 
-const refreshAdmin = async (userId: string | undefined) => {
-  if (!userId) {
-    setState({ isAdmin: false });
-    return;
-  }
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-  setState({ isAdmin: !error && data?.role === "admin" });
-};
-
-const init = () => {
-  if (initialized) return;
-  initialized = true;
-
-  // 1) listener FIRST (synchronous setState only inside)
-  supabase.auth.onAuthStateChange((_event, session) => {
-    setState({
-      session,
-      user: session?.user ?? null,
-      loading: false,
-    });
-    // defer async role check
-    setTimeout(() => refreshAdmin(session?.user?.id), 0);
+export function setAuthenticatedUser(user: AuthUser | null) {
+  setState({
+    user,
+    isAdmin: user?.role === "admin",
+    loading: false,
   });
-
-  // 2) THEN getSession
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    setState({
-      session,
-      user: session?.user ?? null,
-      loading: false,
-    });
-    refreshAdmin(session?.user?.id);
-  });
-};
+}
 
 export function useAuth() {
   const [snap, setSnap] = useState<AuthState>(state);
+  const getMe = useServerFn(getCurrentAuthUser);
+
   useEffect(() => {
-    init();
-    const l = (s: AuthState) => setSnap(s);
-    listeners.add(l);
+    const listener = (next: AuthState) => setSnap(next);
+    listeners.add(listener);
     setSnap(state);
     return () => {
-      listeners.delete(l);
+      listeners.delete(listener);
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    setState({ loading: true });
+    getMe()
+      .then((user) => {
+        if (active) setAuthenticatedUser(user);
+      })
+      .catch(() => {
+        if (active) setAuthenticatedUser(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [getMe]);
+
   return snap;
 }
 
 export async function signOut() {
-  await supabase.auth.signOut();
+  await logout();
+  setAuthenticatedUser(null);
 }

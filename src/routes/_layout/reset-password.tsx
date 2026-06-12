@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Lock } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Field, AuthShell } from "./login";
-import { supabase } from "@/integrations/supabase/client";
+import { resetPassword } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/_layout/reset-password")({
   component: ResetPage,
@@ -19,6 +20,7 @@ const schema = z
 
 function ResetPage() {
   const navigate = useNavigate();
+  const resetPasswordServer = useServerFn(resetPassword);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -27,12 +29,19 @@ function ResetPage() {
     e.preventDefault();
     const parsed = schema.safeParse({ password, confirm });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    const token =
+      typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("token");
+    if (!token) return toast.error("Link de redefinição inválido ou expirado");
     setSubmitting(true);
-    const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
-    setSubmitting(false);
-    if (error) return toast.error(error.message);
-    toast.success("Senha alterada com sucesso");
-    navigate({ to: "/minha-conta" });
+    try {
+      await resetPasswordServer({ data: { token, password: parsed.data.password } });
+      toast.success("Senha alterada com sucesso");
+      navigate({ to: "/login" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível alterar a senha");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

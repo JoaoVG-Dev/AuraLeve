@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Lock, Mail, User } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Field, AuthShell } from "./login";
-import { supabase } from "@/integrations/supabase/client";
+import { setAuthenticatedUser } from "@/hooks/use-auth";
+import { signup } from "@/lib/auth.functions";
 
 export const Route = createFileRoute("/_layout/cadastro")({
   component: SignupPage,
@@ -21,6 +23,7 @@ const schema = z
 
 function SignupPage() {
   const navigate = useNavigate();
+  const signupServer = useServerFn(signup);
   const [form, setForm] = useState({ fullName: "", email: "", password: "", confirm: "" });
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,28 +32,22 @@ function SignupPage() {
     const parsed = schema.safeParse(form);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: {
-        data: { full_name: parsed.data.fullName },
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    });
-    setSubmitting(false);
-    if (error) {
-      if (error.message.toLowerCase().includes("rate limit")) {
-        return toast.error(
-          "Limite temporário de envio de e-mails atingido. Tente novamente em alguns minutos.",
-        );
-      }
-      const msg = error.message.includes("already registered")
-        ? "Este e-mail já está cadastrado"
-        : error.message;
-      return toast.error(msg);
+    try {
+      const user = await signupServer({
+        data: {
+          fullName: parsed.data.fullName,
+          email: parsed.data.email,
+          password: parsed.data.password,
+        },
+      });
+      setAuthenticatedUser(user);
+      toast.success("Conta criada! Bem-vinda à AuraLeve");
+      navigate({ to: "/minha-conta" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível criar sua conta");
+    } finally {
+      setSubmitting(false);
     }
-    toast.success("Conta criada! Bem-vinda à AuraLeve");
-    navigate({ to: "/minha-conta" });
   };
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
