@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
   CreditCard,
@@ -15,8 +16,8 @@ import { toast } from "sonner";
 import { AuraLeveSymbol } from "@/components/AuraLeveLogo";
 import { useAuth, signOut } from "@/hooks/use-auth";
 import { useMyOrders, useOrderDetail } from "@/lib/catalog";
+import { getMyProfile, saveMyProfile } from "@/lib/profile.functions";
 import { formatBRL } from "@/lib/types";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_layout/minha-conta")({
   component: AccountPage,
@@ -42,6 +43,8 @@ function AccountPage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const getProfileServer = useServerFn(getMyProfile);
+  const saveProfileServer = useServerFn(saveMyProfile);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -49,18 +52,16 @@ function AccountPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("full_name, phone")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setFullName(data.full_name ?? "");
-          setPhone(data.phone ?? "");
-        }
-      });
-  }, [user]);
+    let cancelled = false;
+    getProfileServer().then((data) => {
+      if (cancelled || !data) return;
+      setFullName(data.full_name ?? "");
+      setPhone(data.phone ?? "");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [getProfileServer, user]);
 
   if (loading || !user) {
     return (
@@ -71,12 +72,14 @@ function AccountPage() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({ id: user.id, full_name: fullName.trim(), phone: phone.trim() });
-    setSaving(false);
-    if (error) return toast.error("Não foi possível salvar");
-    toast.success("Dados atualizados");
+    try {
+      await saveProfileServer({ data: { fullName: fullName.trim(), phone: phone.trim() } });
+      toast.success("Dados atualizados");
+    } catch {
+      toast.error("Não foi possível salvar");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const logout = async () => {
