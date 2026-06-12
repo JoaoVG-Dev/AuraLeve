@@ -7,6 +7,18 @@ import { logBackendEvent, messageFromError } from "@/lib/observability.server";
 
 export const MP_WEBHOOK_PATH = "/api/public/mp-webhook";
 
+type MpWebhookBody = {
+  resource?: unknown;
+  data?: { id?: unknown } | null;
+  id?: unknown;
+  type?: unknown;
+  topic?: unknown;
+} | null;
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
 function safeEquals(a: string, b: string) {
   if (a.length !== b.length) return false;
   let mismatch = 0;
@@ -72,7 +84,8 @@ async function hasValidMpSignature(request: Request, url: URL, secret: string) {
 }
 
 async function hasValidWebhookAuthentication(request: Request, url: URL) {
-  const expected = process.env.MP_WEBHOOK_SECRET?.trim();
+  const expected =
+    process.env.MP_WEBHOOK_SECRET?.trim() || process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim();
   if (!expected) {
     logBackendEvent("error", "mp-webhook.missing_secret");
     return false;
@@ -83,7 +96,7 @@ async function hasValidWebhookAuthentication(request: Request, url: URL) {
   return hasValidMpSignature(request, url, expected);
 }
 
-function extractPaymentId(body: any, url: URL) {
+function extractPaymentId(body: MpWebhookBody, url: URL) {
   const resource = typeof body?.resource === "string" ? body.resource : "";
   return (
     body?.data?.id ??
@@ -94,12 +107,14 @@ function extractPaymentId(body: any, url: URL) {
   );
 }
 
-function extractEventType(body: any, url: URL) {
-  return body?.type ?? body?.topic ?? url.searchParams.get("type") ?? url.searchParams.get("topic");
+function extractEventType(body: MpWebhookBody, url: URL) {
+  const type = typeof body?.type === "string" ? body.type : null;
+  const topic = typeof body?.topic === "string" ? body.topic : null;
+  return type ?? topic ?? url.searchParams.get("type") ?? url.searchParams.get("topic");
 }
 
-function isPaymentNotFoundError(error: any) {
-  const message = String(error?.message ?? "").toLowerCase();
+function isPaymentNotFoundError(error: unknown) {
+  const message = isObject(error) ? String(error.message ?? "").toLowerCase() : "";
   return message.includes("payment not found");
 }
 
@@ -132,9 +147,10 @@ export async function handleMercadoPagoWebhook(request: Request) {
     validateMercadoPagoCredentials("Mercado Pago webhook");
 
     const raw = await request.text();
-    let body: any = null;
+    let body: MpWebhookBody = null;
     try {
-      body = raw ? JSON.parse(raw) : null;
+      const parsed = raw ? JSON.parse(raw) : null;
+      body = isObject(parsed) ? parsed : null;
     } catch {
       body = null;
     }
@@ -165,7 +181,7 @@ export async function handleMercadoPagoWebhook(request: Request) {
 
     await applyPaymentStatusToOrder(String(orderId), payment, { source: "webhook" });
     return new Response("ok", { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (isPaymentNotFoundError(error)) {
       logBackendEvent("info", "mp-webhook.payment_not_found");
       return new Response("payment not found", { status: 200 });

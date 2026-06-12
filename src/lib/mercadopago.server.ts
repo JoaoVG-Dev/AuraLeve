@@ -1,7 +1,13 @@
 // Server-only Mercado Pago helper. Imports are blocked from client bundles
 // thanks to the `.server.ts` suffix.
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { logBackendEvent, messageFromError } from "./observability.server";
+import {
+  applyPaymentUpdate,
+  loadOrderForPayment as loadOrderForPaymentRow,
+  loadPaymentState,
+  updatePixPaymentCreated,
+  type OrderForPayment as OrderRow,
+} from "@/lib/repositories/orders.server";
 
 const MP_BASE = "https://api.mercadopago.com";
 
@@ -29,9 +35,37 @@ interface ApplyPaymentOptions {
   source?: "card" | "polling" | "webhook";
 }
 
-function readEnv(name: string) {
-  const value = process.env[name];
-  return typeof value === "string" ? value.trim() : "";
+type JsonObject = Record<string, unknown>;
+
+export type MpPaymentResponse = JsonObject & {
+  id?: string | number | null;
+  status?: string | null;
+  status_detail?: string | null;
+  external_reference?: string | number | null;
+  date_of_expiration?: string | null;
+  point_of_interaction?: {
+    transaction_data?: {
+      qr_code?: string | null;
+      qr_code_base64?: string | null;
+      ticket_url?: string | null;
+    } | null;
+  } | null;
+};
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function stringField(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function readEnv(...names: string[]) {
+  for (const name of names) {
+    const value = process.env[name];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
 }
 
 function classifyMpCredential(value: string): MpCredentialStatus {
@@ -64,8 +98,8 @@ function logCredentialStatus(
 }
 
 export function getMercadoPagoCredentialStatus() {
-  const publicKey = readEnv("MP_PUBLIC_KEY");
-  const accessToken = readEnv("MP_ACCESS_TOKEN");
+  const publicKey = readEnv("MP_PUBLIC_KEY", "VITE_MP_PUBLIC_KEY");
+  const accessToken = readEnv("MP_ACCESS_TOKEN", "MERCADO_PAGO_ACCESS_TOKEN");
   return {
     publicKey: classifyMpCredential(publicKey),
     accessToken: classifyMpCredential(accessToken),
@@ -73,8 +107,8 @@ export function getMercadoPagoCredentialStatus() {
 }
 
 export function validateMercadoPagoCredentials(context = "Mercado Pago"): MpRuntimeConfig {
-  const publicKey = readEnv("MP_PUBLIC_KEY");
-  const accessToken = readEnv("MP_ACCESS_TOKEN");
+  const publicKey = readEnv("MP_PUBLIC_KEY", "VITE_MP_PUBLIC_KEY");
+  const accessToken = readEnv("MP_ACCESS_TOKEN", "MERCADO_PAGO_ACCESS_TOKEN");
   const publicKeyStatus = classifyMpCredential(publicKey);
   const accessTokenStatus = classifyMpCredential(accessToken);
 
@@ -84,7 +118,7 @@ export function validateMercadoPagoCredentials(context = "Mercado Pago"): MpRunt
   }
   if (!accessTokenStatus.exists) {
     logCredentialStatus("error", context, publicKeyStatus, accessTokenStatus);
-    throw new Error("MP_ACCESS_TOKEN não configurado");
+    throw new Error("MERCADO_PAGO_ACCESS_TOKEN não configurado");
   }
   if (publicKeyStatus.environment === "unknown" || accessTokenStatus.environment === "unknown") {
     logCredentialStatus("error", context, publicKeyStatus, accessTokenStatus);
@@ -116,7 +150,10 @@ export function getPublicKey(): string {
   return validateMercadoPagoCredentials("Mercado Pago public key").publicKey;
 }
 
-async function mpFetch(path: string, init: RequestInit & { idempotencyKey?: string } = {}) {
+async function mpFetch<T = unknown>(
+  path: string,
+  init: RequestInit & { idempotencyKey?: string } = {},
+): Promise<T> {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token()}`,
     "Content-Type": "application/json",
@@ -125,25 +162,31 @@ async function mpFetch(path: string, init: RequestInit & { idempotencyKey?: stri
   if (init.idempotencyKey) headers["X-Idempotency-Key"] = init.idempotencyKey;
   const res = await fetch(`${MP_BASE}${path}`, { ...init, headers });
   const text = await res.text();
-  let json: any = null;
+  let json: unknown = null;
   try {
     json = text ? JSON.parse(text) : null;
   } catch {
     // Mercado Pago may return an empty or plain-text body on some errors.
   }
   if (!res.ok) {
-    const cause = Array.isArray(json?.cause)
-      ? json.cause
-          .map((item: any) => item?.description || item?.message || item?.code)
+    const body = isJsonObject(json) ? json : {};
+    const cause = Array.isArray(body.cause)
+      ? body.cause
+          .map((item) =>
+            isJsonObject(item) ? item.description || item.message || item.code : null,
+          )
           .filter(Boolean)
           .join("; ")
       : "";
-    const msg = [json?.message || json?.error || text || `MP error ${res.status}`, cause]
+    const msg = [
+      stringField(body.message) || stringField(body.error) || text || `MP error ${res.status}`,
+      cause,
+    ]
       .filter(Boolean)
       .join(": ");
     throw new Error(`Mercado Pago: ${msg}`);
   }
-  return json;
+  return json as T;
 }
 
 export async function checkPixAvailability() {
@@ -175,34 +218,9 @@ export async function checkPixAvailability() {
   }
 }
 
-interface OrderRow {
-  id: string;
-  user_id: string;
-  total: number;
-  status: string;
-  payment_status: string;
-  payment_method: string;
-  payment_id: string | null;
-  payment_expires_at: string | null;
-  paid_at: string | null;
-  canceled_at: string | null;
-  customer_email: string;
-  customer_name: string;
-  customer_phone: string;
-}
-
 export async function loadOrderForPayment(orderId: string, userId: string): Promise<OrderRow> {
-  const { data, error } = await supabaseAdmin
-    .from("orders")
-    .select(
-      "id,user_id,total,status,payment_status,payment_method,payment_id,payment_expires_at,paid_at,canceled_at,customer_email,customer_name,customer_phone",
-    )
-    .eq("id", orderId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Pedido não encontrado");
-  if (data.user_id !== userId) throw new Error("Pedido não pertence ao usuário");
-  return data as OrderRow;
+  const data = await loadOrderForPaymentRow(orderId, userId);
+  return data;
 }
 
 function assertOrderCanReceivePayment(order: OrderRow) {
@@ -238,11 +256,12 @@ export async function createPixPayment(order: OrderRow, notificationUrl?: string
       last_name: rest.join(" ") || "AuraLeve",
     },
     external_reference: order.id,
-    notification_url: notificationUrl || process.env.MP_WEBHOOK_URL || undefined,
+    notification_url:
+      notificationUrl || readEnv("MP_WEBHOOK_URL", "MERCADO_PAGO_WEBHOOK_URL") || undefined,
   };
-  let json: any;
+  let json: MpPaymentResponse;
   try {
-    json = await mpFetch("/v1/payments", {
+    json = await mpFetch<MpPaymentResponse>("/v1/payments", {
       method: "POST",
       body: JSON.stringify(body),
       idempotencyKey: order.payment_id
@@ -273,22 +292,14 @@ export async function createPixPayment(order: OrderRow, notificationUrl?: string
     );
   }
 
-  const { error } = await supabaseAdmin
-    .from("orders")
-    .update({
-      status: "pending",
-      payment_status: "pending",
-      payment_id: String(json.id),
-      payment_expires_at: paymentExpiresAt,
-      payment_provider: "mercado_pago",
-      payment_status_detail: json.status_detail ?? null,
-      pix_qr_code: td?.qr_code_base64 ?? null,
-      pix_copy_paste: td?.qr_code ?? null,
-      canceled_at: null,
-    } as never)
-    .eq("id", order.id);
-
-  if (error) throw new Error(error.message);
+  await updatePixPaymentCreated({
+    orderId: order.id,
+    paymentId,
+    paymentExpiresAt,
+    statusDetail: json.status_detail ?? null,
+    qrCodeBase64: td?.qr_code_base64 ?? null,
+    qrCode: td?.qr_code ?? null,
+  });
 
   logBackendEvent("info", "mp.pix.created", {
     orderId: order.id,
@@ -326,7 +337,7 @@ export async function processCardPayment(
   validateMercadoPagoCredentials("Mercado Pago card");
   assertOrderCanReceivePayment(order);
 
-  const body: any = {
+  const body: Record<string, unknown> = {
     transaction_amount: Number(order.total),
     token: input.token,
     description: `Pedido AuraLeve #${order.id.slice(0, 8).toUpperCase()}`,
@@ -338,11 +349,12 @@ export async function processCardPayment(
       identification: input.identification,
     },
     external_reference: order.id,
-    notification_url: notificationUrl || process.env.MP_WEBHOOK_URL || undefined,
+    notification_url:
+      notificationUrl || readEnv("MP_WEBHOOK_URL", "MERCADO_PAGO_WEBHOOK_URL") || undefined,
   };
-  let json: any;
+  let json: MpPaymentResponse;
   try {
-    json = await mpFetch("/v1/payments", {
+    json = await mpFetch<MpPaymentResponse>("/v1/payments", {
       method: "POST",
       body: JSON.stringify(body),
       idempotencyKey: `order-${order.id}-${kind}-${Date.now()}`,
@@ -373,7 +385,7 @@ export async function processCardPayment(
 }
 
 export async function fetchPayment(paymentId: string) {
-  return mpFetch(`/v1/payments/${paymentId}`, { method: "GET" });
+  return mpFetch<MpPaymentResponse>(`/v1/payments/${paymentId}`, { method: "GET" });
 }
 
 function mapMercadoPagoStatus(status: string): {
@@ -417,11 +429,11 @@ function isStaleTransition(
 // Map MP payment status -> our enums and write to the order idempotently.
 export async function applyPaymentStatusToOrder(
   orderId: string,
-  payment: any,
+  payment: MpPaymentResponse,
   options: ApplyPaymentOptions = {},
 ) {
-  const status: string = payment?.status ?? "pending";
-  const statusDetail: string | null = payment?.status_detail ?? null;
+  const status = payment.status ?? "pending";
+  const statusDetail = payment.status_detail ?? null;
   const paymentId = payment?.id == null ? null : String(payment.id);
   const externalReference =
     payment?.external_reference == null ? null : String(payment.external_reference);
@@ -439,13 +451,7 @@ export async function applyPaymentStatusToOrder(
     throw new Error("Mercado Pago payment does not belong to this order");
   }
 
-  const { data: current, error: loadError } = await supabaseAdmin
-    .from("orders")
-    .select("id,status,payment_status,payment_id,paid_at,canceled_at,payment_expires_at")
-    .eq("id", orderId)
-    .maybeSingle();
-
-  if (loadError) throw new Error(loadError.message);
+  const current = await loadPaymentState(orderId);
   if (!current) throw new Error("Pedido não encontrado");
 
   if (
@@ -486,30 +492,29 @@ export async function applyPaymentStatusToOrder(
     };
   }
 
-  const update: Record<string, any> = {
-    payment_status: paymentStatus,
-    status: orderStatus,
-    payment_status_detail: statusDetail,
-    payment_provider: "mercado_pago",
-  };
-  if (paymentId) update.payment_id = paymentId;
-  if (payment?.date_of_expiration) update.payment_expires_at = payment.date_of_expiration;
-
   const now = new Date().toISOString();
+  let paidAt = current.paid_at;
+  let canceledAt = current.canceled_at;
   if (paymentStatus === "paid") {
-    update.paid_at = current.paid_at ?? now;
-    update.canceled_at = null;
+    paidAt = current.paid_at ?? now;
+    canceledAt = null;
   } else if (orderStatus === "cancelled") {
-    update.canceled_at = current.canceled_at ?? now;
+    canceledAt = current.canceled_at ?? now;
   } else if (allowPaymentReplacement) {
-    update.canceled_at = null;
+    canceledAt = null;
   }
 
-  const { error } = await supabaseAdmin
-    .from("orders")
-    .update(update as never)
-    .eq("id", orderId);
-  if (error) throw new Error(error.message);
+  await applyPaymentUpdate({
+    orderId,
+    paymentStatus,
+    orderStatus,
+    paymentStatusDetail: statusDetail,
+    paymentProvider: "mercado_pago",
+    paymentId,
+    paymentExpiresAt: payment?.date_of_expiration ?? null,
+    paidAt,
+    canceledAt,
+  });
 
   if (paymentStatus === "paid") {
     logBackendEvent("info", "mp.payment.approved", {

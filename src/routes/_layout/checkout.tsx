@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useShop } from "@/lib/store";
-import { useProducts, validateCoupon } from "@/lib/catalog";
+import { useProducts, validateCouponFn } from "@/lib/catalog";
 import { useAuth } from "@/hooks/use-auth";
 import { createOrder } from "@/lib/orders.functions";
 import {
@@ -188,6 +188,7 @@ function CheckoutPage() {
   const refreshStatus = useServerFn(refreshPaymentStatus);
   const validateMpConfig = useServerFn(validateMpCheckoutConfig);
   const createOrderServer = useServerFn(createOrder);
+  const validateCouponServer = useServerFn(validateCouponFn);
 
   const [stage, setStage] = useState<Stage>("form");
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -391,7 +392,7 @@ function CheckoutPage() {
 
   const applyCoupon = async () => {
     setValidating(true);
-    const res = await validateCoupon(couponCode, subtotal);
+    const res = await validateCouponServer({ data: { code: couponCode, subtotal } });
     setValidating(false);
     if (!res.ok) {
       setCoupon(null);
@@ -412,7 +413,7 @@ function CheckoutPage() {
 
   const refreshAppliedCoupon = async () => {
     if (!coupon) return true;
-    const res = await validateCoupon(coupon.code, subtotal);
+    const res = await validateCouponServer({ data: { code: coupon.code, subtotal } });
     if (!res.ok) {
       setCoupon(null);
       setDiscount(0);
