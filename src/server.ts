@@ -7,13 +7,7 @@ import {
   mercadoPagoWebhookMethodNotAllowed,
   MP_WEBHOOK_PATH,
 } from "./lib/mp-webhook.server";
-import {
-  SUPABASE_PROJECT_ID_ALIASES,
-  SUPABASE_PUBLISHABLE_KEY_ALIASES,
-  SUPABASE_URL_ALIASES,
-  readRuntimeEnvValue,
-} from "./integrations/supabase/env";
-import { SUPABASE_SERVICE_ROLE_KEY_ALIASES } from "./integrations/supabase/env.server";
+import { DATABASE_URL_ALIASES, DIRECT_DATABASE_URL_ALIASES } from "./lib/db/env";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -22,18 +16,28 @@ type ServerEntry = {
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 const RUNTIME_ENV_ALIASES = {
-  SUPABASE_URL: SUPABASE_URL_ALIASES,
-  SUPABASE_PROJECT_ID: SUPABASE_PROJECT_ID_ALIASES,
-  SUPABASE_PUBLISHABLE_KEY: SUPABASE_PUBLISHABLE_KEY_ALIASES,
-  SUPABASE_SERVICE_ROLE_KEY: SUPABASE_SERVICE_ROLE_KEY_ALIASES,
-  VITE_SUPABASE_URL: SUPABASE_URL_ALIASES,
-  VITE_SUPABASE_PROJECT_ID: SUPABASE_PROJECT_ID_ALIASES,
-  VITE_SUPABASE_PUBLISHABLE_KEY: SUPABASE_PUBLISHABLE_KEY_ALIASES,
-  MP_ACCESS_TOKEN: ["MP_ACCESS_TOKEN"],
-  MP_PUBLIC_KEY: ["MP_PUBLIC_KEY"],
-  MP_WEBHOOK_SECRET: ["MP_WEBHOOK_SECRET"],
-  MP_WEBHOOK_URL: ["MP_WEBHOOK_URL"],
+  DATABASE_URL: DATABASE_URL_ALIASES,
+  DIRECT_DATABASE_URL: DIRECT_DATABASE_URL_ALIASES,
+  AUTH_SECRET: ["AUTH_SECRET"],
+  AUTH_COOKIE_NAME: ["AUTH_COOKIE_NAME"],
+  MP_ACCESS_TOKEN: ["MP_ACCESS_TOKEN", "MERCADO_PAGO_ACCESS_TOKEN"],
+  MERCADO_PAGO_ACCESS_TOKEN: ["MERCADO_PAGO_ACCESS_TOKEN", "MP_ACCESS_TOKEN"],
+  MP_PUBLIC_KEY: ["MP_PUBLIC_KEY", "VITE_MP_PUBLIC_KEY"],
+  VITE_MP_PUBLIC_KEY: ["VITE_MP_PUBLIC_KEY", "MP_PUBLIC_KEY"],
+  MP_WEBHOOK_SECRET: ["MP_WEBHOOK_SECRET", "MERCADO_PAGO_WEBHOOK_SECRET"],
+  MERCADO_PAGO_WEBHOOK_SECRET: ["MERCADO_PAGO_WEBHOOK_SECRET", "MP_WEBHOOK_SECRET"],
+  MP_WEBHOOK_URL: ["MP_WEBHOOK_URL", "MERCADO_PAGO_WEBHOOK_URL"],
+  MERCADO_PAGO_WEBHOOK_URL: ["MERCADO_PAGO_WEBHOOK_URL", "MP_WEBHOOK_URL"],
 } as const satisfies Record<string, readonly string[]>;
+
+function readRuntimeEnvValue(names: readonly string[], runtimeEnv: unknown) {
+  if (!runtimeEnv || typeof runtimeEnv !== "object") return "";
+  for (const name of names) {
+    const value = (runtimeEnv as Record<string, unknown>)[name];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
 
 function hydrateProcessEnv(env: unknown) {
   if (!env || typeof env !== "object") return;
