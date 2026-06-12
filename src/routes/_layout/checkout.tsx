@@ -16,7 +16,22 @@ import { couponDiscount, finalPrice, formatBRL } from "@/lib/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, X, Copy, Loader2, Clock, XCircle, RefreshCw, RotateCcw } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  Copy,
+  CreditCard,
+  Home,
+  Loader2,
+  MapPin,
+  PackageCheck,
+  RefreshCw,
+  RotateCcw,
+  ShieldCheck,
+  Truck,
+  X,
+  XCircle,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_layout/checkout")({
   component: CheckoutPage,
@@ -67,7 +82,29 @@ const debitPaymentMethodByBrand: Record<string, string> = {
   visa: "debvisa",
 };
 
-function normalizeMpList(response: any) {
+type MpPaymentMethod = {
+  id?: string;
+  payment_type_id?: string;
+};
+type MpIssuer = {
+  id?: string | number;
+};
+type MpListResponse<T> = T[] | { results?: T[] } | null | undefined;
+type MercadoPagoClient = {
+  createCardToken: (payload: Record<string, unknown>) => Promise<{ id?: string }>;
+  getPaymentMethods: (payload: { bin: string }) => Promise<MpListResponse<MpPaymentMethod>>;
+  getIssuers: (payload: {
+    paymentMethodId: string;
+    bin: string;
+  }) => Promise<MpListResponse<MpIssuer>>;
+};
+type MercadoPagoConstructor = new (
+  publicKey: string,
+  options: { locale: string },
+) => MercadoPagoClient;
+type WindowWithMercadoPago = Window & { MercadoPago?: MercadoPagoConstructor };
+
+function normalizeMpList<T>(response: MpListResponse<T>): T[] {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.results)) return response.results;
   return [];
@@ -82,12 +119,17 @@ function debitPaymentMethodId(cardNumber: string, fallbackBrand?: string) {
   return "";
 }
 
-function resolveCardPaymentMethod(methods: any[], kind: "credit" | "debit", cardNumber: string) {
+function resolveCardPaymentMethod(
+  methods: MpPaymentMethod[],
+  kind: "credit" | "debit",
+  cardNumber: string,
+) {
   const expectedType = kind === "debit" ? "debit_card" : "credit_card";
-  const direct = methods.find((method: any) => method?.payment_type_id === expectedType);
+  const direct = methods.find((method) => method.payment_type_id === expectedType);
   if (direct) return direct;
 
   const fallback = methods[0];
+  if (!fallback) return undefined;
   if (kind !== "debit") return fallback;
 
   const id = debitPaymentMethodId(cardNumber, fallback?.id);
@@ -100,16 +142,21 @@ function resolveCardPaymentMethod(methods: any[], kind: "credit" | "debit", card
   };
 }
 
-let mpSdkPromise: Promise<any> | null = null;
-function loadMpSdk(): Promise<any> {
+let mpSdkPromise: Promise<MercadoPagoConstructor> | null = null;
+function loadMpSdk(): Promise<MercadoPagoConstructor> {
   if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
-  if ((window as any).MercadoPago) return Promise.resolve((window as any).MercadoPago);
+  const mpWindow = window as WindowWithMercadoPago;
+  if (mpWindow.MercadoPago) return Promise.resolve(mpWindow.MercadoPago);
   if (mpSdkPromise) return mpSdkPromise;
   mpSdkPromise = new Promise((resolve, reject) => {
     const s = document.createElement("script");
     s.src = "https://sdk.mercadopago.com/js/v2";
     s.async = true;
-    s.onload = () => resolve((window as any).MercadoPago);
+    s.onload = () => {
+      const loadedWindow = window as WindowWithMercadoPago;
+      if (loadedWindow.MercadoPago) resolve(loadedWindow.MercadoPago);
+      else reject(new Error("SDK do Mercado Pago indisponível"));
+    };
     s.onerror = () => reject(new Error("Falha ao carregar SDK do Mercado Pago"));
     document.head.appendChild(s);
   });
@@ -118,6 +165,9 @@ function loadMpSdk(): Promise<any> {
 
 type Stage = "form" | "pix" | "approved" | "rejected" | "pending" | "expired";
 type PixState = { qrBase64?: string; copyPaste?: string; expiresAt?: string | null };
+
+const errorText = (error: unknown, fallback: string) =>
+  error instanceof Error ? error.message : fallback;
 
 function CheckoutPage() {
   const navigate = useNavigate();
@@ -176,7 +226,7 @@ function CheckoutPage() {
   const [mpPublicKey, setMpPublicKey] = useState<string | null>(null);
   const [mpInitError, setMpInitError] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const mpClientRef = useRef<any>(null);
+  const mpClientRef = useRef<MercadoPagoClient | null>(null);
   const pollRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -220,11 +270,11 @@ function CheckoutPage() {
         mpClientRef.current = new MercadoPagoCtor(publicKey, { locale: "pt-BR" });
         setMpPublicKey(publicKey);
         setMpInitError(null);
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!active) return;
         mpClientRef.current = null;
         setMpPublicKey(null);
-        setMpInitError(error?.message || "Não foi possível inicializar o Mercado Pago");
+        setMpInitError(errorText(error, "Não foi possível inicializar o Mercado Pago"));
       }
     })();
 
@@ -438,14 +488,14 @@ function CheckoutPage() {
         const cardNumber = onlyDigits(card.cardNumber);
         const bin = cardNumber.slice(0, 8);
         const methodsRes = await mp.getPaymentMethods({ bin });
-        const methods = normalizeMpList(methodsRes);
+        const methods = normalizeMpList<MpPaymentMethod>(methodsRes);
         const method = resolveCardPaymentMethod(methods, form.paymentMethod, cardNumber);
         if (!method?.id) throw new Error("Bandeira do cartão não suportada");
 
         let issuerId: string | undefined;
         try {
           const issuersRes = await mp.getIssuers({ paymentMethodId: method.id, bin });
-          const issuer = normalizeMpList(issuersRes)[0];
+          const issuer = normalizeMpList<MpIssuer>(issuersRes)[0];
           issuerId = issuer?.id == null ? undefined : String(issuer.id);
         } catch {
           issuerId = undefined;
@@ -481,8 +531,8 @@ function CheckoutPage() {
           toast.error("Pagamento recusado");
         }
       }
-    } catch (err: any) {
-      const message = err?.message || "Não foi possível finalizar o pedido";
+    } catch (err: unknown) {
+      const message = errorText(err, "Não foi possível finalizar o pedido");
       setCheckoutError(message);
       toast.error(message);
     } finally {
@@ -507,8 +557,8 @@ function CheckoutPage() {
       setPollFailures(0);
       setStage("pix");
       toast.message("Novo QR Code Pix gerado");
-    } catch (err: any) {
-      const message = err?.message || "Não foi possível gerar outro Pix";
+    } catch (err: unknown) {
+      const message = errorText(err, "Não foi possível gerar outro Pix");
       setCheckoutError(message);
       toast.error(message);
     } finally {
@@ -530,17 +580,11 @@ function CheckoutPage() {
         </p>
         <div className="flex gap-3 justify-center flex-wrap">
           {orderId && (
-            <Link
-              to="/minha-conta"
-              className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground"
-            >
+            <Link to="/minha-conta" className="aura-button">
               Ver meu pedido
             </Link>
           )}
-          <button
-            onClick={() => navigate({ to: "/" })}
-            className="rounded-full border border-border px-6 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary"
-          >
+          <button onClick={() => navigate({ to: "/" })} className="aura-button-outline">
             Voltar à home
           </button>
         </div>
@@ -560,10 +604,7 @@ function CheckoutPage() {
           <p className="text-xs text-muted-foreground mb-6">Detalhe: {statusDetail}</p>
         )}
         {orderId && (
-          <Link
-            to="/minha-conta"
-            className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground"
-          >
+          <Link to="/minha-conta" className="aura-button">
             Acompanhar pedido
           </Link>
         )}
@@ -588,7 +629,7 @@ function CheckoutPage() {
               setStage("form");
               setCheckoutError(null);
             }}
-            className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground inline-flex items-center gap-2"
+            className="aura-button"
           >
             <RotateCcw className="h-4 w-4" /> Tentar cartão novamente
           </button>
@@ -599,7 +640,7 @@ function CheckoutPage() {
               setStage("form");
               setCheckoutError(null);
             }}
-            className="rounded-full border border-border px-6 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary"
+            className="aura-button-outline"
           >
             Trocar forma de pagamento
           </button>
@@ -625,7 +666,7 @@ function CheckoutPage() {
           <button
             onClick={() => void refreshCurrentStatus({ manual: true })}
             disabled={statusLoading}
-            className="rounded-full border border-border px-6 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-50 inline-flex items-center gap-2"
+            className="aura-button-outline disabled:opacity-50"
           >
             {statusLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -637,7 +678,7 @@ function CheckoutPage() {
           <button
             onClick={() => void retryPixPayment()}
             disabled={submitting}
-            className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground disabled:opacity-50 inline-flex items-center gap-2"
+            className="aura-button disabled:opacity-50"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -647,10 +688,7 @@ function CheckoutPage() {
             Gerar novo Pix
           </button>
           {orderId && (
-            <Link
-              to="/minha-conta"
-              className="rounded-full border border-border px-6 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:border-primary"
-            >
+            <Link to="/minha-conta" className="aura-button-outline">
               Acompanhar pedido
             </Link>
           )}
@@ -664,7 +702,7 @@ function CheckoutPage() {
 
     return (
       <div className="aura-container py-12 max-w-lg">
-        <div className="rounded-2xl border border-border bg-card p-6 text-center space-y-4">
+        <div className="aura-card space-y-4 p-6 text-center">
           <h1 className="font-display text-2xl text-primary">Pague com Pix</h1>
           <p className="text-sm text-muted-foreground">
             Escaneie o QR Code com o app do seu banco. Aguardaremos a confirmação automaticamente.
@@ -673,7 +711,7 @@ function CheckoutPage() {
             <img
               alt="QR Code Pix"
               src={`data:image/png;base64,${pix.qrBase64}`}
-              className="mx-auto h-64 w-64 rounded-xl border border-border bg-white p-2"
+              className="mx-auto h-64 w-64 rounded-lg border border-border bg-white p-2"
             />
           ) : (
             <div className="h-64 w-64 mx-auto flex items-center justify-center">
@@ -682,9 +720,7 @@ function CheckoutPage() {
           )}
           {pix?.copyPaste && (
             <div>
-              <label className="block text-xs uppercase tracking-wider text-primary font-semibold mb-1.5">
-                Pix copia e cola
-              </label>
+              <label className="aura-label">Pix copia e cola</label>
               <div className="flex gap-2">
                 <input readOnly value={pix.copyPaste} className="aura-input flex-1 text-xs" />
                 <button
@@ -693,7 +729,7 @@ function CheckoutPage() {
                     navigator.clipboard.writeText(pix.copyPaste!);
                     toast.success("Código copiado");
                   }}
-                  className="rounded-full bg-accent text-primary px-4 text-xs font-semibold hover:bg-accent/80"
+                  className="aura-button-outline min-h-10 px-3 py-2"
                 >
                   <Copy className="h-4 w-4" />
                 </button>
@@ -706,7 +742,7 @@ function CheckoutPage() {
             </p>
           )}
           <div className="text-xs text-muted-foreground inline-flex items-center gap-2">
-            <Loader2 className="h-3 w-3 animate-spin" /> Aguardando confirmação do Mercado Pago…
+            <Loader2 className="h-3 w-3 animate-spin" /> Aguardando confirmação do Mercado Pago...
           </div>
           {pollFailures > 0 && (
             <p className="text-xs text-destructive">
@@ -717,7 +753,7 @@ function CheckoutPage() {
             type="button"
             onClick={() => void refreshCurrentStatus({ manual: true })}
             disabled={statusLoading}
-            className="mx-auto rounded-full border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:text-primary hover:border-primary disabled:opacity-50 inline-flex items-center gap-2"
+            className="aura-button-outline mx-auto min-h-10 px-4 py-2 disabled:opacity-50"
           >
             {statusLoading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -732,22 +768,43 @@ function CheckoutPage() {
             </Link>
           )}
         </div>
-        <style>{`
-          .aura-input { width: 100%; border-radius: 0.75rem; border: 1px solid var(--color-border);
-            background: var(--color-card); padding: 0.55rem 0.7rem; font-size: 0.875rem;
-            color: var(--color-foreground); outline: none; }
-        `}</style>
       </div>
     );
   }
 
   // form
   return (
-    <div className="aura-container py-12">
-      <h1 className="aura-section-title mb-10">Checkout</h1>
-      <form onSubmit={submit} className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <Section title="Seus dados">
+    <div className="aura-container py-10 md:py-14">
+      <div className="mb-9">
+        <span className="aura-eyebrow">Checkout seguro</span>
+        <h1 className="mt-2 font-display text-4xl text-foreground md:text-6xl">
+          Finalize sua compra
+        </h1>
+        <p className="mt-2 max-w-xl text-muted-foreground">
+          Um fluxo claro, protegido e cuidadoso para receber suas peças AuraLeve.
+        </p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {[
+            { icon: ShieldCheck, title: "Pagamento seguro", text: "Mercado Pago" },
+            { icon: Truck, title: "Entrega acompanhada", text: "Para todo o Brasil" },
+            { icon: PackageCheck, title: "Embalagem especial", text: "Com intenção" },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="flex items-center gap-3 rounded-lg border border-border bg-card/72 p-3"
+            >
+              <item.icon className="h-5 w-5 shrink-0 text-primary" />
+              <span>
+                <strong className="block text-xs text-foreground">{item.title}</strong>
+                <span className="text-xs text-muted-foreground">{item.text}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <form onSubmit={submit} className="grid gap-8 lg:grid-cols-[1fr_390px]">
+        <div className="space-y-5">
+          <Section title="Dados do cliente" number={1}>
             <Field label="Nome completo">
               <input
                 className="aura-input"
@@ -780,7 +837,7 @@ function CheckoutPage() {
             </div>
           </Section>
 
-          <Section title="Endereço de entrega">
+          <Section title="Endereço de entrega" number={2}>
             <div className="grid sm:grid-cols-3 gap-4">
               <Field label="CEP">
                 <input
@@ -840,12 +897,75 @@ function CheckoutPage() {
             </div>
           </Section>
 
-          <Section title="Forma de pagamento">
-            <div className="grid sm:grid-cols-3 gap-3">
+          <Section title="Entrega" number={3}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-primary bg-champagne/45 p-4 text-sm">
+                <span className="flex items-center gap-3">
+                  <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
+                    <Truck className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <strong className="block text-foreground">Entrega padrão</strong>
+                    <span className="text-xs text-muted-foreground">
+                      Prazo estimado: 5 a 7 dias úteis
+                    </span>
+                  </span>
+                </span>
+                <span className="font-semibold text-primary">No checkout</span>
+              </label>
+              <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-border bg-card p-4 text-sm text-muted-foreground">
+                <span className="flex items-center gap-3">
+                  <span className="grid h-8 w-8 place-items-center rounded-md bg-champagne text-primary">
+                    <MapPin className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <strong className="block text-foreground">Envio com cuidado</strong>
+                    <span className="text-xs">O frete final é calculado pelo pedido.</span>
+                  </span>
+                </span>
+              </label>
+            </div>
+          </Section>
+
+          <Section title="Cupom de desconto" number={4}>
+            {coupon ? (
+              <div className="flex items-center justify-between rounded-lg border border-primary/40 bg-champagne px-3 py-2 text-sm">
+                <span className="font-semibold uppercase text-primary">{coupon.code}</span>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <input
+                  className="aura-input flex-1 uppercase"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  placeholder="Digite seu cupom"
+                  maxLength={40}
+                />
+                <button
+                  type="button"
+                  onClick={applyCoupon}
+                  disabled={validating || !couponCode.trim()}
+                  className="aura-button-outline disabled:opacity-50"
+                >
+                  {validating ? "Validando..." : "Aplicar"}
+                </button>
+              </div>
+            )}
+          </Section>
+
+          <Section title="Pagamento" number={5}>
+            <div className="grid gap-3 sm:grid-cols-3">
               {(["pix", "credit", "debit"] as const).map((m) => (
                 <label
                   key={m}
-                  className={`cursor-pointer rounded-xl border p-4 text-center text-sm font-medium transition ${form.paymentMethod === m ? "border-primary bg-accent text-primary" : "border-border bg-card text-muted-foreground hover:border-primary"}`}
+                  className={`cursor-pointer rounded-lg border p-4 text-center text-sm font-semibold transition ${form.paymentMethod === m ? "border-primary bg-champagne text-primary" : "border-border bg-card text-muted-foreground hover:border-primary"}`}
                 >
                   <input
                     type="radio"
@@ -854,15 +974,15 @@ function CheckoutPage() {
                     checked={form.paymentMethod === m}
                     onChange={() => set("paymentMethod", m)}
                   />
-                  {m === "pix" ? "PIX" : m === "credit" ? "Cartão de crédito" : "Cartão de débito"}
+                  {m === "pix" ? "Pix" : m === "credit" ? "Cartão de crédito" : "Cartão de débito"}
                 </label>
               ))}
             </div>
 
             {form.paymentMethod !== "pix" && (
-              <div className="mt-4 rounded-2xl border border-border p-5 grid gap-4">
+              <div className="mt-4 grid gap-4 rounded-lg border border-border bg-card/55 p-5">
                 {mpInitError && (
-                  <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                     {mpInitError}
                   </div>
                 )}
@@ -925,7 +1045,7 @@ function CheckoutPage() {
                     >
                       {[1, 2, 3, 4, 5, 6, 10, 12].map((n) => (
                         <option key={n} value={n}>
-                          {n}× {formatBRL(total / n)}
+                          {n}x {formatBRL(total / n)}
                           {n === 1 ? " à vista" : " sem juros"}
                         </option>
                       ))}
@@ -940,7 +1060,7 @@ function CheckoutPage() {
             )}
 
             {form.paymentMethod === "pix" && (
-              <div className="mt-4 rounded-2xl border border-border bg-accent/30 p-5 text-sm text-muted-foreground">
+              <div className="mt-4 rounded-lg border border-border bg-champagne/45 p-5 text-sm text-muted-foreground">
                 Após finalizar, geraremos um QR Code Pix real via Mercado Pago. A confirmação é
                 automática.
               </div>
@@ -948,13 +1068,13 @@ function CheckoutPage() {
           </Section>
         </div>
 
-        <aside className="rounded-2xl border border-border bg-card p-6 h-fit sticky top-20 space-y-4">
-          <h2 className="font-display text-xl text-primary">Resumo do pedido</h2>
+        <aside className="aura-card h-fit space-y-5 p-6 lg:sticky lg:top-28">
+          <h2 className="font-display text-2xl text-foreground">Resumo do pedido</h2>
           <ul className="space-y-2 text-sm">
             {items.map((i) => (
               <li key={i.product.id} className="flex justify-between gap-2">
                 <span className="text-muted-foreground line-clamp-1">
-                  {i.quantity}× {i.product.name}
+                  {i.quantity}x {i.product.name}
                 </span>
                 <span>{formatBRL(finalPrice(i.product) * i.quantity)}</span>
               </li>
@@ -969,43 +1089,7 @@ function CheckoutPage() {
             {discount > 0 && (
               <div className="flex justify-between text-sm text-primary">
                 <span>Cupom {coupon?.code}</span>
-                <span>−{formatBRL(discount)}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="pt-2 border-t border-border">
-            <label className="block text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-1.5">
-              Cupom de desconto
-            </label>
-            {coupon ? (
-              <div className="flex items-center justify-between rounded-xl border border-primary/40 bg-accent px-3 py-2 text-sm">
-                <span className="font-semibold uppercase text-primary">{coupon.code}</span>
-                <button
-                  type="button"
-                  onClick={removeCoupon}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  className="aura-input flex-1 uppercase"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder="AURA10"
-                  maxLength={40}
-                />
-                <button
-                  type="button"
-                  onClick={applyCoupon}
-                  disabled={validating || !couponCode.trim()}
-                  className="rounded-full bg-accent text-primary px-4 text-xs font-semibold hover:bg-accent/80 disabled:opacity-50"
-                >
-                  {validating ? "..." : "Aplicar"}
-                </button>
+                <span>{formatBRL(discount)}</span>
               </div>
             )}
           </div>
@@ -1020,7 +1104,7 @@ function CheckoutPage() {
             disabled={
               submitting || (form.paymentMethod !== "pix" && (!!mpInitError || !mpPublicKey))
             }
-            className="w-full rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="aura-button w-full disabled:opacity-50"
           >
             {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {submitting
@@ -1030,30 +1114,53 @@ function CheckoutPage() {
               : "Finalizar compra"}
           </button>
           {checkoutError && (
-            <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {checkoutError}
             </p>
           )}
           <p className="text-[11px] text-muted-foreground text-center">
             Pagamentos processados pelo Mercado Pago.
           </p>
+          <div className="space-y-3 border-t border-border pt-4">
+            {[
+              { icon: CreditCard, title: "Pagamento protegido" },
+              { icon: Home, title: "Pedido acompanhado na sua conta" },
+              { icon: PackageCheck, title: "Peças embaladas com cuidado" },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="flex items-center gap-2 text-xs text-muted-foreground"
+              >
+                <item.icon className="h-4 w-4 text-primary" />
+                {item.title}
+              </div>
+            ))}
+          </div>
         </aside>
       </form>
-
-      <style>{`
-        .aura-input { width: 100%; border-radius: 0.75rem; border: 1px solid var(--color-border);
-          background: var(--color-card); padding: 0.65rem 0.9rem; font-size: 0.875rem;
-          color: var(--color-foreground); outline: none; transition: border-color .15s, box-shadow .15s; }
-        .aura-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 18%, transparent); }
-      `}</style>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  number,
+  children,
+}: {
+  title: string;
+  number?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
-      <h2 className="font-display text-xl text-primary mb-4">{title}</h2>
+    <div className="aura-card p-5 md:p-6">
+      <div className="mb-4 flex items-center gap-3">
+        {number ? (
+          <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
+            {number}
+          </span>
+        ) : null}
+        <h2 className="font-display text-2xl text-foreground">{title}</h2>
+      </div>
       <div className="space-y-4">{children}</div>
     </div>
   );
@@ -1062,9 +1169,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs uppercase tracking-[0.18em] text-primary font-semibold mb-1.5">
-        {label}
-      </span>
+      <span className="aura-label">{label}</span>
       {children}
     </label>
   );
