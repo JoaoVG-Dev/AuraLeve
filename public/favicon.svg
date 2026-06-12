@@ -1,27 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="AuraLeve">
-  <defs>
-    <linearGradient id="aura" x1="12" y1="10" x2="52" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#d4ab3c" />
-      <stop offset="0.52" stop-color="#6f45cf" />
-      <stop offset="1" stop-color="#4f2dbf" />
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="18" fill="#f7f5fb" />
-  <circle cx="32" cy="32" r="20" fill="none" stroke="url(#aura)" stroke-width="4.5" />
-  <circle cx="32" cy="12" r="4.5" fill="#d4ab3c" />
-  <circle cx="46.2" cy="17.8" r="3.6" fill="#4f2dbf" />
-  <circle cx="52" cy="32" r="3.6" fill="#6f45cf" />
-  <circle cx="46.2" cy="46.2" r="3.6" fill="#4f2dbf" />
-  <circle cx="32" cy="52" r="3.6" fill="#d4ab3c" />
-  <circle cx="17.8" cy="46.2" r="3.6" fill="#4f2dbf" />
-  <circle cx="12" cy="32" r="3.6" fill="#6f45cf" />
-  <circle cx="17.8" cy="17.8" r="3.6" fill="#4f2dbf" />
-  <path
-    d="M32 23.5c4.8 4 7.2 8 7.2 12 0 4.3-3.1 7.5-7.2 7.5s-7.2-3.2-7.2-7.5c0-4 2.4-8 7.2-12Z"
-    fill="#ffffff"
-  />
-  <path
-    d="M32 26.7c2.9 2.8 4.4 5.6 4.4 8.4 0 2.7-1.8 4.9-4.4 4.9s-4.4-2.2-4.4-4.9c0-2.8 1.5-5.6 4.4-8.4Z"
-    fill="#4f2dbf"
-  />
+  <rect width="64" height="64" rx="12" fill="#FAF6F0" />
+  <g fill="none" stroke="#C8A36A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 8v5" />
+    <path d="M32 51v5" />
+    <path d="M22 20c0-7 7-9 10-2 3-7 10-5 10 2 0 8-10 13-10 13S22 28 22 20Z" />
+    <path d="M22 44c0 7 7 9 10 2 3 7 10 5 10-2 0-8-10-13-10-13S22 36 22 44Z" />
+    <path d="M18 32c0-9 6-17 14-21 8 4 14 12 14 21s-6 17-14 21c-8-4-14-12-14-21Z" opacity=".52" />
+  </g>
+  <g fill="#A7734D">
+    <circle cx="32" cy="6" r="1.8" />
+    <circle cx="32" cy="32" r="2.2" />
+    <path d="M46 10l1.5 3.2 3.2 1.5-3.2 1.5L46 19.4l-1.5-3.2-3.2-1.5 3.2-1.5L46 10Z" />
+  </g>
 </svg>

@@ -1,17 +1,20 @@
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  ShoppingBag,
-  Search,
-  Menu,
-  X,
-  User as UserIcon,
-  LogOut,
+  Heart,
   LayoutDashboard,
+  LogOut,
+  Menu,
+  Search,
+  ShoppingBag,
+  User as UserIcon,
+  X,
 } from "lucide-react";
 import { useState } from "react";
-import { useShop } from "@/lib/store";
-import { useAuth, signOut } from "@/hooks/use-auth";
 import { toast } from "sonner";
+import { AuraLeveLogo } from "@/components/AuraLeveLogo";
+import { useAuth, signOut } from "@/hooks/use-auth";
+import { useShop } from "@/lib/store";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -24,7 +27,9 @@ export function Navbar() {
 
   const links = [
     { to: "/", label: "Início" },
-    { to: "/catalogo", label: "Catálogo" },
+    { to: "/catalogo", label: "Coleções" },
+    { to: "/catalogo", label: "Acessórios" },
+    { to: "/catalogo", label: "Cristais" },
     { to: "/sobre", label: "Sobre" },
     ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
   ];
@@ -37,26 +42,31 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
-      <div className="aura-container flex h-16 items-center justify-between gap-4">
-        <Link to="/" className="group flex items-center">
-          <span className="font-display text-lg uppercase tracking-[0.18em] text-primary">
-            AuraLeve
-          </span>
+    <header className="sticky top-0 z-50 border-b border-border/80 bg-card/88 shadow-[0_10px_30px_-28px_rgb(59_42_30_/_0.65)] backdrop-blur-xl">
+      <div className="border-b border-border/60 bg-champagne/42">
+        <div className="aura-container flex h-7 items-center justify-center text-[0.68rem] font-semibold uppercase text-primary">
+          Frete grátis acima de R$199 <span className="mx-3 text-border">|</span> 10% off na
+          primeira compra
+        </div>
+      </div>
+
+      <div className="aura-container flex h-[4.5rem] items-center justify-between gap-4 py-3">
+        <Link to="/" className="group flex shrink-0 items-center" aria-label="AuraLeve início">
+          <AuraLeveLogo className="transition-opacity group-hover:opacity-90" />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
-          {links.map((l) => {
-            const active = l.to === "/" ? path === "/" : path.startsWith(l.to);
+        <nav className="hidden items-center gap-1 lg:flex">
+          {links.map((l, index) => {
+            const active =
+              l.to === "/" ? path === "/" : l.label === "Admin" ? path.startsWith("/admin") : false;
             return (
               <Link
-                key={l.to}
+                key={`${l.label}-${index}`}
                 to={l.to}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-accent text-primary"
-                    : "text-muted-foreground hover:text-primary hover:bg-accent/60"
-                }`}
+                className={cn(
+                  "rounded-md px-3 py-2 text-[0.72rem] font-semibold uppercase text-muted-foreground transition",
+                  active ? "bg-champagne text-primary" : "hover:bg-champagne/60 hover:text-primary",
+                )}
               >
                 {l.label}
               </Link>
@@ -64,22 +74,29 @@ export function Navbar() {
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <Link
             to="/catalogo"
-            className="hidden sm:inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-accent transition"
+            className="hidden h-10 w-10 items-center justify-center rounded-md text-foreground transition hover:bg-champagne hover:text-primary sm:inline-flex"
             aria-label="Buscar"
           >
             <Search className="h-4 w-4" />
           </Link>
+          <button
+            type="button"
+            className="hidden h-10 w-10 items-center justify-center rounded-md text-foreground transition hover:bg-champagne hover:text-primary sm:inline-flex"
+            aria-label="Favoritos"
+          >
+            <Heart className="h-4 w-4" />
+          </button>
           <Link
             to="/carrinho"
-            className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-primary hover:bg-accent transition"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground transition hover:bg-champagne hover:text-primary"
             aria-label="Carrinho"
           >
             <ShoppingBag className="h-4 w-4" />
             {count > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-semibold text-primary-foreground flex items-center justify-center">
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[0.62rem] font-bold text-primary-foreground">
                 {count}
               </span>
             )}
@@ -89,7 +106,7 @@ export function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-primary hover:opacity-90 transition"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-champagne text-primary transition hover:bg-accent"
                 aria-label="Minha conta"
               >
                 <UserIcon className="h-4 w-4" />
@@ -97,17 +114,17 @@ export function Navbar() {
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-card shadow-lg z-50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-border">
+                  <div className="aura-panel absolute right-0 z-50 mt-2 w-64 overflow-hidden">
+                    <div className="border-b border-border px-4 py-3">
                       <div className="text-xs text-muted-foreground">Conectada como</div>
-                      <div className="text-sm font-medium text-foreground line-clamp-1">
+                      <div className="line-clamp-1 text-sm font-semibold text-foreground">
                         {user.email}
                       </div>
                     </div>
                     <Link
                       to="/minha-conta"
                       onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-accent text-foreground"
+                      className="flex items-center gap-2 px-4 py-3 text-sm text-foreground transition hover:bg-champagne"
                     >
                       <UserIcon className="h-4 w-4" /> Minha conta
                     </Link>
@@ -115,14 +132,14 @@ export function Navbar() {
                       <Link
                         to="/admin"
                         onClick={() => setMenuOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-accent text-primary font-medium"
+                        className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-primary transition hover:bg-champagne"
                       >
                         <LayoutDashboard className="h-4 w-4" /> Painel admin
                       </Link>
                     )}
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-accent text-muted-foreground border-t border-border"
+                      className="flex w-full items-center gap-2 border-t border-border px-4 py-3 text-sm text-muted-foreground transition hover:bg-champagne hover:text-primary"
                     >
                       <LogOut className="h-4 w-4" /> Sair
                     </button>
@@ -131,16 +148,13 @@ export function Navbar() {
               )}
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:opacity-90 transition"
-            >
+            <Link to="/login" className="aura-button hidden min-h-10 px-4 py-2 sm:inline-flex">
               Entrar
             </Link>
           )}
 
           <button
-            className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground transition hover:bg-champagne lg:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label="Menu"
           >
@@ -150,14 +164,14 @@ export function Navbar() {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-border bg-background">
+        <div className="border-t border-border bg-card lg:hidden">
           <nav className="aura-container flex flex-col py-2">
-            {links.map((l) => (
+            {links.map((l, index) => (
               <Link
-                key={l.to}
+                key={`${l.label}-mobile-${index}`}
                 to={l.to}
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent"
+                className="rounded-md px-3 py-3 text-sm font-semibold uppercase text-muted-foreground hover:bg-champagne hover:text-primary"
               >
                 {l.label}
               </Link>
@@ -166,7 +180,7 @@ export function Navbar() {
               <Link
                 to="/login"
                 onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-3 text-sm font-medium text-primary hover:bg-accent"
+                className="rounded-md px-3 py-3 text-sm font-semibold uppercase text-primary hover:bg-champagne"
               >
                 Entrar / Criar conta
               </Link>
