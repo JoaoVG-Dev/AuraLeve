@@ -1,12 +1,6 @@
-import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createServerFn, useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import type { Database } from "@/integrations/supabase/types";
-
-type OrderStatus = Database["public"]["Enums"]["order_status"];
-type PaymentStatus = Database["public"]["Enums"]["payment_status"];
 
 const orderStatuses = [
   "pending",
@@ -17,6 +11,9 @@ const orderStatuses = [
   "cancelled",
 ] as const;
 const adminPaymentStatuses = ["pending", "failed", "refunded", "expired"] as const;
+type OrderStatus = (typeof orderStatuses)[number];
+type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "expired";
+
 const orderStatusRank: Record<OrderStatus, number> = {
   pending: 0,
   paid: 1,
@@ -60,89 +57,89 @@ function orderErrorMessage(message: string) {
   const normalized = message.toLowerCase();
 
   if (normalized.includes("coupon expired")) return "Este cupom expirou.";
-  if (normalized.includes("coupon inactive")) return "Cupom inválido ou inativo.";
+  if (normalized.includes("coupon inactive")) return "Cupom invalido ou inativo.";
   if (normalized.includes("coupon is not valid yet"))
-    return "Este cupom ainda não está disponível.";
+    return "Este cupom ainda nao esta disponivel.";
   if (normalized.includes("coupon usage limit reached"))
     return "Este cupom atingiu o limite de uso.";
   if (normalized.includes("coupon already used by customer"))
-    return "Este cupom não está mais disponível.";
-  if (normalized.includes("coupon not found")) return "Cupom inválido ou inativo.";
+    return "Este cupom nao esta mais disponivel.";
+  if (normalized.includes("coupon not found")) return "Cupom invalido ou inativo.";
   if (normalized.includes("coupon minimum order total"))
-    return "O pedido não atingiu o valor mínimo deste cupom.";
+    return "O pedido nao atingiu o valor minimo deste cupom.";
   if (normalized.includes("insufficient stock"))
-    return "Um dos produtos não tem estoque suficiente.";
-  if (normalized.includes("product not found")) return "Um dos produtos não está mais disponível.";
+    return "Um dos produtos nao tem estoque suficiente.";
+  if (normalized.includes("product not found")) return "Um dos produtos nao esta mais disponivel.";
   if (normalized.includes("product not available"))
-    return "Um dos produtos não está disponível para compra.";
+    return "Um dos produtos nao esta disponivel para compra.";
   if (normalized.includes("invalid product discount"))
-    return "Um dos produtos tem uma regra de preço inválida.";
+    return "Um dos produtos tem uma regra de preco invalida.";
   if (normalized.includes("invalid quantity"))
-    return "A quantidade de um item do carrinho é inválida.";
-  if (normalized.includes("invalid order total")) return "O total do pedido é inválido.";
-  if (normalized.includes("invalid payment method")) return "Forma de pagamento inválida.";
-  if (normalized.includes("empty cart")) return "Seu carrinho está vazio.";
+    return "A quantidade de um item do carrinho e invalida.";
+  if (normalized.includes("invalid order total")) return "O total do pedido e invalido.";
+  if (normalized.includes("invalid payment method")) return "Forma de pagamento invalida.";
+  if (normalized.includes("empty cart")) return "Seu carrinho esta vazio.";
 
   return message;
 }
 
-async function assertAdmin(userId: string) {
-  const { data, error } = await supabaseAdmin
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
+async function requireCurrentUserId() {
+  const { getCurrentUser } = await import("@/lib/auth/auth.server");
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Autenticacao necessaria");
+  return user.id;
+}
 
-  if (error) throw new Error(error.message);
-  if (data?.role !== "admin") {
-    throw new Response("Forbidden", { status: 403 });
-  }
+async function requireCurrentAdminUserId() {
+  const userId = await requireCurrentUserId();
+  const { assertAdmin } = await import("@/lib/repositories/admin.server");
+  await assertAdmin(userId);
+  return userId;
 }
 
 export const createOrder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) => createOrderSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    const { data: orderId, error } = await supabaseAdmin.rpc("place_order_for_user", {
-      _user_id: context.userId,
-      _items: data.items,
-      _coupon_code: data.couponCode ?? "",
-      _customer: data.customer,
-      _payment_method: data.paymentMethod,
-    });
+  .handler(async ({ data }) => {
+    const userId = await requireCurrentUserId();
+    const { placeOrderForUser } = await import("@/lib/repositories/orders.server");
+    let orderId = "";
+    try {
+      orderId = await placeOrderForUser({
+        userId,
+        items: data.items,
+        couponCode: data.couponCode ?? "",
+        customer: data.customer,
+        paymentMethod: data.paymentMethod,
+      });
+    } catch (error) {
+      if (error instanceof Error) throw new Error(orderErrorMessage(error.message));
+      throw error;
+    }
 
-    if (error) throw new Error(orderErrorMessage(error.message));
     if (!orderId) throw new Error("Order was not created");
-
     return { orderId };
   });
 
 export const updateOrderStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) => updateOrderStatusSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertAdmin(context.userId);
+  .handler(async ({ data }) => {
+    await requireCurrentAdminUserId();
+    const { loadOrderStatus, updateOrderStatus: updateOrderStatusRow } =
+      await import("@/lib/repositories/orders.server");
 
-    const { data: current, error: currentError } = await supabaseAdmin
-      .from("orders")
-      .select("status,payment_status")
-      .eq("id", data.orderId)
-      .maybeSingle();
-
-    if (currentError) throw new Error(currentError.message);
-    if (!current) throw new Error("Pedido não encontrado");
+    const current = await loadOrderStatus(data.orderId);
+    if (!current) throw new Error("Pedido nao encontrado");
 
     if (current.status === "cancelled" && data.status !== "cancelled") {
-      throw new Error("Pedido cancelado não pode voltar para o fluxo operacional.");
+      throw new Error("Pedido cancelado nao pode voltar para o fluxo operacional.");
     }
 
     if (
       current.status !== "cancelled" &&
       data.status !== "cancelled" &&
-      orderStatusRank[data.status as OrderStatus] < orderStatusRank[current.status as OrderStatus]
+      orderStatusRank[data.status as OrderStatus] < orderStatusRank[current.status]
     ) {
-      throw new Error("Não é possível voltar um pedido para uma etapa anterior.");
+      throw new Error("Nao e possivel voltar um pedido para uma etapa anterior.");
     }
 
     if (
@@ -150,24 +147,14 @@ export const updateOrderStatus = createServerFn({ method: "POST" })
       data.paymentStatus &&
       data.paymentStatus !== "refunded"
     ) {
-      throw new Error("Pagamento aprovado não pode voltar para um status inferior.");
+      throw new Error("Pagamento aprovado nao pode voltar para um status inferior.");
     }
 
-    const update: Database["public"]["Tables"]["orders"]["Update"] = {
+    await updateOrderStatusRow({
+      orderId: data.orderId,
       status: data.status as OrderStatus,
-    };
-
-    if (data.paymentStatus) {
-      update.payment_status = data.paymentStatus as PaymentStatus;
-    }
-
-    if (data.status === "cancelled") {
-      update.canceled_at = new Date().toISOString();
-    }
-
-    const { error } = await supabaseAdmin.from("orders").update(update).eq("id", data.orderId);
-
-    if (error) throw new Error(error.message);
+      paymentStatus: data.paymentStatus as PaymentStatus | null | undefined,
+    });
 
     return { ok: true };
   });
