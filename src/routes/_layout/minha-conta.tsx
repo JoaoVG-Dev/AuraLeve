@@ -1,18 +1,38 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import {
+  ArrowLeft,
+  CreditCard,
+  Heart,
+  LogOut,
+  MapPin,
+  Package,
+  Settings,
+  Star,
+  User,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { AuraLeveSymbol } from "@/components/AuraLeveLogo";
 import { useAuth, signOut } from "@/hooks/use-auth";
-import { Field, AuraInputStyle } from "./login";
 import { useMyOrders, useOrderDetail } from "@/lib/catalog";
 import { formatBRL } from "@/lib/types";
-import { LogOut, Package, MapPin, User, ChevronRight, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_layout/minha-conta")({
   component: AccountPage,
 });
 
 type Tab = "data" | "orders";
+
+const menu = [
+  { id: "data" as const, label: "Minha conta", icon: User },
+  { id: "orders" as const, label: "Meus pedidos", icon: Package },
+  { id: "addresses", label: "Endereços", icon: MapPin, disabled: true },
+  { id: "payments", label: "Formas de pagamento", icon: CreditCard, disabled: true },
+  { id: "favorites", label: "Favoritos", icon: Heart, disabled: true },
+  { id: "reviews", label: "Avaliações", icon: Star, disabled: true },
+  { id: "settings", label: "Configurações", icon: Settings, disabled: true },
+];
 
 function AccountPage() {
   const { user, loading } = useAuth();
@@ -66,115 +86,150 @@ function AccountPage() {
   };
 
   return (
-    <div className="aura-container py-12 max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8 flex-wrap gap-3">
-        <div>
-          <h1 className="aura-section-title">Minha conta</h1>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
-        </div>
-        <button
-          onClick={logout}
-          className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:border-primary transition"
-        >
-          <LogOut className="h-4 w-4" /> Sair
-        </button>
+    <div className="aura-container py-10 md:py-14">
+      <div className="mb-8">
+        <span className="aura-eyebrow">Conta do cliente</span>
+        <h1 className="mt-2 font-display text-4xl text-foreground md:text-6xl">Minha conta</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{user.email}</p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3 mb-8">
-        <Card
-          icon={<User className="h-5 w-5" />}
-          title="Meus dados"
-          active={tab === "data"}
-          onClick={() => {
-            setTab("data");
-            setOpenOrderId(null);
-          }}
-        />
-        <Card
-          icon={<Package className="h-5 w-5" />}
-          title="Meus pedidos"
-          active={tab === "orders"}
-          onClick={() => {
-            setTab("orders");
-          }}
-        />
-        <Card icon={<MapPin className="h-5 w-5" />} title="Endereços" hint="Em breve" />
-      </div>
-
-      {tab === "data" && (
-        <form onSubmit={save} className="rounded-2xl border border-border bg-card p-6 space-y-4">
-          <h2 className="font-display text-xl text-primary">Meus dados</h2>
-          <Field label="Nome completo">
-            <input
-              className="aura-input"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              maxLength={100}
-            />
-          </Field>
-          <Field label="Telefone">
-            <input
-              className="aura-input"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              maxLength={20}
-            />
-          </Field>
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <aside className="aura-card h-fit overflow-hidden p-3 lg:sticky lg:top-28">
+          <nav className="space-y-1">
+            {menu.map((item) => {
+              const Icon = item.icon;
+              const active = item.id === tab;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={item.disabled}
+                  onClick={() => {
+                    if (item.id === "data" || item.id === "orders") {
+                      setTab(item.id);
+                      setOpenOrderId(null);
+                    }
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold transition ${
+                    active
+                      ? "bg-champagne text-primary"
+                      : "text-muted-foreground hover:bg-champagne/55 hover:text-primary"
+                  } ${item.disabled ? "cursor-not-allowed opacity-55" : ""}`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
           <button
-            type="submit"
-            disabled={saving}
-            className="rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:opacity-50"
+            onClick={logout}
+            className="mt-3 flex w-full items-center gap-3 border-t border-border px-3 py-3 text-sm font-semibold text-primary transition hover:bg-champagne"
+            type="button"
           >
-            {saving ? "Salvando..." : "Salvar alterações"}
+            <LogOut className="h-4 w-4" /> Sair da conta
           </button>
-        </form>
-      )}
+        </aside>
 
-      {tab === "orders" && !openOrderId && <OrdersList userId={user.id} onOpen={setOpenOrderId} />}
-      {tab === "orders" && openOrderId && (
-        <OrderDetail orderId={openOrderId} onBack={() => setOpenOrderId(null)} />
-      )}
+        <section className="min-w-0">
+          {tab === "data" && (
+            <form onSubmit={save} className="aura-card relative overflow-hidden p-5 md:p-7">
+              <AuraLeveSymbol className="aura-symbol-watermark absolute right-8 top-8 h-36" />
+              <div className="relative">
+                <h2 className="font-display text-3xl text-foreground">Meus dados</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Atualize suas informações pessoais com segurança.
+                </p>
+                <div className="mt-6 grid gap-4">
+                  <Field label="Nome completo">
+                    <input
+                      className="aura-input"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      maxLength={100}
+                    />
+                  </Field>
+                  <Field label="E-mail">
+                    <input className="aura-input" value={user.email ?? ""} disabled />
+                  </Field>
+                  <Field label="Telefone">
+                    <input
+                      className="aura-input"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      maxLength={20}
+                    />
+                  </Field>
+                </div>
+                <button type="submit" disabled={saving} className="aura-button mt-6">
+                  {saving ? "Salvando..." : "Salvar alterações"}
+                </button>
+              </div>
+            </form>
+          )}
 
-      <AuraInputStyle />
+          {tab === "orders" && !openOrderId && (
+            <OrdersList userId={user.id} onOpen={setOpenOrderId} />
+          )}
+          {tab === "orders" && openOrderId && (
+            <OrderDetail orderId={openOrderId} onBack={() => setOpenOrderId(null)} />
+          )}
+        </section>
+      </div>
     </div>
   );
 }
 
 function OrdersList({ userId, onOpen }: { userId: string; onOpen: (id: string) => void }) {
   const { data: orders = [], isLoading } = useMyOrders(userId);
-  if (isLoading)
-    return <div className="text-center text-muted-foreground py-12">Carregando pedidos...</div>;
+
+  if (isLoading) {
+    return <div className="py-12 text-center text-muted-foreground">Carregando pedidos...</div>;
+  }
+
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-10 text-center">
-        <Package className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-        <p className="text-muted-foreground">Você ainda não fez nenhum pedido.</p>
+      <div className="aura-card p-10 text-center">
+        <Package className="mx-auto mb-4 h-12 w-12 text-primary" />
+        <h2 className="font-display text-3xl text-foreground">Você ainda não fez nenhum pedido</h2>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+          Quando uma compra for finalizada, o histórico aparecerá aqui com status e detalhes.
+        </p>
+        <Link to="/catalogo" className="aura-button mt-6">
+          Explorar catálogo
+        </Link>
       </div>
     );
   }
+
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden">
-      <h2 className="font-display text-xl text-primary px-6 pt-6">Meus pedidos</h2>
-      <ul className="divide-y divide-border mt-4">
+    <div className="aura-card overflow-hidden">
+      <div className="border-b border-border px-5 py-5 md:px-6">
+        <h2 className="font-display text-3xl text-foreground">Meus pedidos</h2>
+        <p className="text-sm text-muted-foreground">
+          Acompanhe status e detalhes dos seus pedidos.
+        </p>
+      </div>
+      <ul className="divide-y divide-border">
         {orders.map((o) => (
           <li key={o.id}>
             <button
               onClick={() => onOpen(o.id)}
-              className="w-full flex items-center justify-between gap-3 px-6 py-4 hover:bg-accent/40 transition text-left"
+              className="grid w-full gap-4 px-5 py-4 text-left transition hover:bg-champagne/38 md:grid-cols-[1fr_auto] md:items-center md:px-6"
+              type="button"
             >
               <div className="min-w-0">
-                <div className="text-sm font-medium text-foreground">
+                <div className="text-sm font-semibold text-foreground">
                   Pedido #{o.id.slice(0, 8).toUpperCase()}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {new Date(o.created_at).toLocaleString("pt-BR")} ·{" "}
+                  {new Date(o.created_at).toLocaleString("pt-BR")} •{" "}
                   {o.payment_method.toUpperCase()}
                 </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 md:justify-end">
                 <StatusBadge status={o.status} />
                 <span className="font-semibold text-primary">{formatBRL(Number(o.total))}</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
             </button>
           </li>
@@ -186,25 +241,27 @@ function OrdersList({ userId, onOpen }: { userId: string; onOpen: (id: string) =
 
 function OrderDetail({ orderId, onBack }: { orderId: string; onBack: () => void }) {
   const { data, isLoading } = useOrderDetail(orderId);
+
   if (isLoading || !data)
-    return <div className="text-center text-muted-foreground py-12">Carregando pedido...</div>;
+    return <div className="py-12 text-center text-muted-foreground">Carregando pedido...</div>;
   const { order, items } = data;
   if (!order)
-    return <div className="text-center text-muted-foreground py-12">Pedido não encontrado.</div>;
+    return <div className="py-12 text-center text-muted-foreground">Pedido não encontrado.</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <button
         onClick={onBack}
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary"
+        type="button"
       >
         <ArrowLeft className="h-4 w-4" /> Voltar para pedidos
       </button>
 
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+      <div className="aura-card p-5 md:p-6">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl text-primary">
+            <h2 className="font-display text-3xl text-foreground">
               Pedido #{order.id.slice(0, 8).toUpperCase()}
             </h2>
             <p className="text-xs text-muted-foreground">
@@ -219,14 +276,16 @@ function OrderDetail({ orderId, onBack }: { orderId: string; onBack: () => void 
 
         <ul className="divide-y divide-border">
           {items.map((it) => (
-            <li key={it.id} className="flex gap-3 py-3 items-center">
+            <li key={it.id} className="flex items-center gap-3 py-3">
               {it.product_image && (
-                <img src={it.product_image} alt="" className="h-14 w-14 rounded-lg object-cover" />
+                <img src={it.product_image} alt="" className="h-14 w-14 rounded-md object-cover" />
               )}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium line-clamp-1">{it.product_name}</div>
+              <div className="min-w-0 flex-1">
+                <div className="line-clamp-1 text-sm font-semibold text-foreground">
+                  {it.product_name}
+                </div>
                 <div className="text-xs text-muted-foreground">
-                  {it.quantity} × {formatBRL(Number(it.unit_price))}
+                  {it.quantity} x {formatBRL(Number(it.unit_price))}
                 </div>
               </div>
               <div className="text-sm font-semibold">{formatBRL(Number(it.subtotal))}</div>
@@ -234,37 +293,46 @@ function OrderDetail({ orderId, onBack }: { orderId: string; onBack: () => void 
           ))}
         </ul>
 
-        <div className="border-t border-border pt-4 mt-4 space-y-1 text-sm">
+        <div className="mt-4 space-y-1 border-t border-border pt-4 text-sm">
           <Row label="Subtotal" value={formatBRL(Number(order.subtotal))} />
           {Number(order.discount) > 0 && (
             <Row
               label={`Cupom ${order.coupon_code ?? ""}`}
-              value={`−${formatBRL(Number(order.discount))}`}
+              value={`-${formatBRL(Number(order.discount))}`}
               accent
             />
           )}
           <Row label="Frete" value={formatBRL(Number(order.shipping))} />
-          <div className="flex justify-between text-base font-semibold pt-2 border-t border-border mt-2">
+          <div className="mt-2 flex justify-between border-t border-border pt-3 text-base font-semibold">
             <span>Total</span>
             <span className="text-primary">{formatBRL(Number(order.total))}</span>
           </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-6 text-sm">
-        <h3 className="font-display text-lg text-primary mb-3">Entrega</h3>
-        <p className="text-foreground">{order.customer_name}</p>
+      <div className="aura-card p-5 text-sm md:p-6">
+        <h3 className="font-display text-2xl text-foreground">Entrega</h3>
+        <p className="mt-3 text-foreground">{order.customer_name}</p>
         <p className="text-muted-foreground">
-          {order.customer_email} · {order.customer_phone}
+          {order.customer_email} • {order.customer_phone}
         </p>
-        <p className="text-muted-foreground mt-2">
+        <p className="mt-2 text-muted-foreground">
           {order.address_line}, {order.address_number}
-          {order.address_complement ? ` — ${order.address_complement}` : ""}
+          {order.address_complement ? ` - ${order.address_complement}` : ""}
           <br />
-          {order.address_city} / {order.address_state} · CEP {order.address_cep}
+          {order.address_city} / {order.address_state} • CEP {order.address_cep}
         </p>
       </div>
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="aura-label">{label}</span>
+      {children}
+    </label>
   );
 }
 
@@ -296,65 +364,33 @@ const PAYMENT_LABEL: Record<string, string> = {
 export function StatusBadge({ status }: { status: string }) {
   const tone =
     status === "delivered"
-      ? "bg-primary/10 text-primary ring-primary/15"
+      ? "bg-primary/10 text-primary ring-primary/20"
       : status === "cancelled"
-        ? "bg-destructive/10 text-destructive ring-destructive/15"
+        ? "bg-destructive/10 text-destructive ring-destructive/20"
         : status === "shipped" || status === "processing"
-          ? "bg-gold/15 text-gold-foreground ring-gold/25"
+          ? "bg-champagne text-primary ring-border"
           : "bg-muted text-muted-foreground ring-border";
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ring-1 ${tone}`}
+      className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase ring-1 ${tone}`}
     >
       {STATUS_LABEL[status] ?? status}
     </span>
   );
 }
+
 export function PaymentBadge({ status }: { status: string }) {
   const tone =
     status === "paid"
-      ? "bg-primary/10 text-primary ring-primary/15"
+      ? "bg-primary/10 text-primary ring-primary/20"
       : status === "failed" || status === "expired"
-        ? "bg-destructive/10 text-destructive ring-destructive/15"
+        ? "bg-destructive/10 text-destructive ring-destructive/20"
         : "bg-muted text-muted-foreground ring-border";
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ring-1 ${tone}`}
+      className={`inline-flex rounded-md px-2.5 py-1 text-[11px] font-bold uppercase ring-1 ${tone}`}
     >
       {PAYMENT_LABEL[status] ?? status}
     </span>
-  );
-}
-
-function Card({
-  icon,
-  title,
-  hint,
-  active,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  hint?: string;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!onClick}
-      className={`text-left rounded-2xl border p-4 flex items-center gap-3 transition ${active ? "border-primary bg-accent/40" : "border-border bg-card hover:border-primary/40"} ${!onClick ? "opacity-60 cursor-not-allowed" : ""}`}
-    >
-      <div
-        className={`h-10 w-10 rounded-full grid place-items-center ${active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-      >
-        {icon}
-      </div>
-      <div>
-        <div className="font-medium text-sm text-foreground">{title}</div>
-        {hint && <div className="text-xs text-muted-foreground">{hint}</div>}
-      </div>
-    </button>
   );
 }
