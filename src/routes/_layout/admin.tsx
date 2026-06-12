@@ -1,14 +1,16 @@
-import { createFileRoute, Link, Outlet, useRouterState, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 import {
-  Package,
-  Tag,
-  Layers,
-  Sparkles,
   LayoutDashboard,
-  Ticket,
-  ShoppingBag,
+  Layers,
+  LogOut,
+  Package,
   ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Tag,
+  Ticket,
 } from "lucide-react";
+import { AuraLeveLogo } from "@/components/AuraLeveLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -46,32 +48,16 @@ const navItems = [
 
 function AdminLayout() {
   const path = useRouterState({ select: (r) => r.location.pathname });
-  return (
-    <div className="min-h-[calc(100vh-160px)] bg-gradient-to-b from-muted/40 to-background">
-      <div className="aura-container max-w-full py-4 sm:py-6 md:py-10">
-        <div className="mb-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:mb-6 sm:p-5">
-          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">
-                Backoffice
-              </span>
-              <h1 className="mt-1 break-words font-display text-xl text-primary sm:text-2xl md:text-3xl">
-                Painel AuraLeve
-              </h1>
-              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Gerencie pedidos, catálogo, cupons e organização da loja.
-              </p>
-            </div>
-            <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs font-semibold text-primary ring-1 ring-primary/15">
-              <ShieldCheck className="h-4 w-4" />
-              Acesso administrativo
-            </div>
-          </div>
-        </div>
 
-        <div className="grid min-w-0 gap-4 lg:grid-cols-[244px_1fr] lg:gap-6">
-          <aside className="min-w-0 lg:sticky lg:top-6 lg:self-start">
-            <nav className="flex max-w-full gap-2 overflow-x-auto rounded-xl border border-border bg-card p-2 shadow-sm [-ms-overflow-style:none] [scrollbar-width:none] lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+  return (
+    <div className="min-h-[calc(100vh-160px)] bg-background">
+      <div className="grid min-h-[calc(100vh-160px)] lg:grid-cols-[248px_1fr]">
+        <aside className="border-b border-border bg-card/82 lg:border-b-0 lg:border-r">
+          <div className="flex h-full flex-col">
+            <div className="border-b border-border p-5">
+              <AuraLeveLogo admin />
+            </div>
+            <nav className="flex gap-2 overflow-x-auto p-3 lg:flex-1 lg:flex-col lg:overflow-visible">
               {navItems.map((n) => {
                 const active = n.exact ? path === n.to : path.startsWith(n.to);
                 return (
@@ -79,10 +65,10 @@ function AdminLayout() {
                     key={n.to}
                     to={n.to}
                     className={cn(
-                      "flex min-w-fit items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium whitespace-nowrap transition sm:px-3 sm:py-2.5 sm:text-sm",
+                      "flex min-w-fit items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition",
                       active
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:bg-accent hover:text-primary",
+                        ? "bg-champagne text-primary"
+                        : "text-muted-foreground hover:bg-champagne/55 hover:text-primary",
                     )}
                   >
                     <n.icon className="h-4 w-4" />
@@ -91,11 +77,38 @@ function AdminLayout() {
                 );
               })}
             </nav>
-          </aside>
-          <section className="min-w-0 max-w-full overflow-hidden">
-            <Outlet />
-          </section>
-        </div>
+            <div className="hidden border-t border-border p-3 lg:block">
+              <Link
+                to="/"
+                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-champagne hover:text-primary"
+              >
+                <LogOut className="h-4 w-4" />
+                Voltar para loja
+              </Link>
+            </div>
+          </div>
+        </aside>
+
+        <section className="min-w-0 px-4 py-5 sm:px-6 md:py-8 xl:px-8">
+          <div className="mb-5 rounded-lg border border-border bg-card/78 p-4 shadow-[var(--shadow-card)]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <span className="aura-eyebrow">Backoffice AuraLeve</span>
+                <h1 className="mt-1 font-display text-3xl text-foreground md:text-4xl">
+                  Gestão completa da loja
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Catálogo, pedidos, cupons e configurações com a identidade premium da marca.
+                </p>
+              </div>
+              <div className="inline-flex w-fit items-center gap-2 rounded-md bg-champagne px-3 py-2 text-xs font-bold text-primary ring-1 ring-border">
+                <ShieldCheck className="h-4 w-4" />
+                Acesso administrativo
+              </div>
+            </div>
+          </div>
+          <Outlet />
+        </section>
       </div>
     </div>
   );

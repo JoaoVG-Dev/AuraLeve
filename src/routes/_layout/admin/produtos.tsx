@@ -407,7 +407,7 @@ function AdminProducts() {
                           })
                         }
                         className={cn(
-                          "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                          "rounded-md border px-3 py-1.5 text-xs font-medium transition",
                           on
                             ? "border-primary bg-primary text-primary-foreground"
                             : "border-border bg-card text-muted-foreground hover:border-primary hover:text-primary",

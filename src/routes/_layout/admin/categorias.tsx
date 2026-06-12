@@ -63,7 +63,7 @@ function CategoriesAdmin() {
       description="Organize as linhas principais do catálogo e mantenha os filtros da loja claros."
       newLabel="Nova categoria"
       emptyTitle="Nenhuma categoria cadastrada"
-      emptyDescription="Crie categorias para agrupar japamalas, pulseiras, colares e outras peças."
+      emptyDescription="Crie categorias para agrupar colares, pulseiras, patuás, japamalas, cristais e outras peças."
       icon={Tags}
       onNew={() => setEditing({ name: "", slug: "" })}
       items={categories}
