@@ -1,5 +1,6 @@
 import "./lib/error-capture";
 
+import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import {
@@ -7,48 +8,6 @@ import {
   mercadoPagoWebhookMethodNotAllowed,
   MP_WEBHOOK_PATH,
 } from "./lib/mp-webhook.server";
-import { DATABASE_URL_ALIASES, DIRECT_DATABASE_URL_ALIASES } from "./lib/db/env";
-
-type ServerEntry = {
-  fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
-};
-
-let serverEntryPromise: Promise<ServerEntry> | undefined;
-
-const RUNTIME_ENV_ALIASES = {
-  DATABASE_URL: DATABASE_URL_ALIASES,
-  DIRECT_DATABASE_URL: DIRECT_DATABASE_URL_ALIASES,
-  AUTH_SECRET: ["AUTH_SECRET"],
-  AUTH_COOKIE_NAME: ["AUTH_COOKIE_NAME"],
-  MP_ACCESS_TOKEN: ["MP_ACCESS_TOKEN", "MERCADO_PAGO_ACCESS_TOKEN"],
-  MERCADO_PAGO_ACCESS_TOKEN: ["MERCADO_PAGO_ACCESS_TOKEN", "MP_ACCESS_TOKEN"],
-  MP_PUBLIC_KEY: ["MP_PUBLIC_KEY", "VITE_MP_PUBLIC_KEY"],
-  VITE_MP_PUBLIC_KEY: ["VITE_MP_PUBLIC_KEY", "MP_PUBLIC_KEY"],
-  MP_WEBHOOK_SECRET: ["MP_WEBHOOK_SECRET", "MERCADO_PAGO_WEBHOOK_SECRET"],
-  MERCADO_PAGO_WEBHOOK_SECRET: ["MERCADO_PAGO_WEBHOOK_SECRET", "MP_WEBHOOK_SECRET"],
-  MP_WEBHOOK_URL: ["MP_WEBHOOK_URL", "MERCADO_PAGO_WEBHOOK_URL"],
-  MERCADO_PAGO_WEBHOOK_URL: ["MERCADO_PAGO_WEBHOOK_URL", "MP_WEBHOOK_URL"],
-} as const satisfies Record<string, readonly string[]>;
-
-function readRuntimeEnvValue(names: readonly string[], runtimeEnv: unknown) {
-  if (!runtimeEnv || typeof runtimeEnv !== "object") return "";
-  for (const name of names) {
-    const value = (runtimeEnv as Record<string, unknown>)[name];
-    if (typeof value === "string" && value.trim()) return value.trim();
-  }
-  return "";
-}
-
-function hydrateProcessEnv(env: unknown) {
-  if (!env || typeof env !== "object") return;
-
-  for (const [key, aliases] of Object.entries(RUNTIME_ENV_ALIASES)) {
-    const value = readRuntimeEnvValue(aliases, env);
-    if (value) {
-      process.env[key] = value;
-    }
-  }
-}
 
 function isMercadoPagoWebhookRequest(request: Request) {
   const url = new URL(request.url);
@@ -60,15 +19,6 @@ function mercadoPagoWebhookOptionsResponse() {
     status: 204,
     headers: { allow: "POST" },
   });
-}
-
-async function getServerEntry(): Promise<ServerEntry> {
-  if (!serverEntryPromise) {
-    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
-    );
-  }
-  return serverEntryPromise;
 }
 
 function brandedErrorResponse(): Response {
@@ -119,10 +69,8 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return brandedErrorResponse();
 }
 
-export default {
-  async fetch(request: Request, env: unknown, ctx: unknown) {
-    hydrateProcessEnv(env);
-
+export default createServerEntry({
+  async fetch(request) {
     try {
       if (isMercadoPagoWebhookRequest(request)) {
         if (request.method === "OPTIONS") return mercadoPagoWebhookOptionsResponse();
@@ -130,12 +78,11 @@ export default {
         return handleMercadoPagoWebhook(request);
       }
 
-      const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
+      const response = await handler.fetch(request);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
       return brandedErrorResponse();
     }
   },
-};
+});
