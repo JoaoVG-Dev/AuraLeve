@@ -36,7 +36,7 @@
 ## Onde configurar
 
 - Local: arquivo `.env.local` na raiz do projeto.
-- Deploy/Cloudflare: configurar as variaveis em Secrets/Environment Variables do projeto publicado.
+- Deploy/Vercel: configurar as variaveis em Settings > Environment Variables do projeto publicado.
 - Mercado Pago Developers: configurar a URL do webhook na aplicacao Mercado Pago e copiar o segredo de assinatura para `MERCADO_PAGO_WEBHOOK_SECRET`.
 
 ## Regras de seguranca

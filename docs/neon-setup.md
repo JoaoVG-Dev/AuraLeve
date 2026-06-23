@@ -6,7 +6,7 @@ AuraLeve now uses Neon Postgres as the only application data store, including au
 
 Set these as server-only secrets:
 
-- `DATABASE_URL`: Neon pooled connection string used by server functions and the Cloudflare Worker.
+- `DATABASE_URL`: Neon pooled connection string used by server functions in the Nitro/Vercel runtime.
 - `DIRECT_DATABASE_URL`: Neon direct connection string used by local migration and seed scripts. Falls back to `DATABASE_URL` when omitted.
 - `AUTH_SECRET`: strong server-only secret used to hash opaque session and reset tokens.
 - `AUTH_COOKIE_NAME`: optional cookie name. Defaults to `auraleve_session`.
