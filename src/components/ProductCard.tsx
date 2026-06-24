@@ -1,17 +1,54 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
+import { toast } from "sonner";
 import type { Product } from "@/lib/types";
 import { finalPrice, formatBRL } from "@/lib/types";
 import { useEnergies } from "@/lib/catalog";
 import { AuraLeveSymbol } from "@/components/AuraLeveLogo";
+import { useAuth } from "@/hooks/use-auth";
+import { useFavoriteProductIds, useToggleFavorite } from "@/lib/favorites";
+import { cn } from "@/lib/utils";
 
 export function ProductCard({ product }: { product: Product }) {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const { data: energies = [] } = useEnergies();
+  const { data: favoriteIds = [] } = useFavoriteProductIds(user?.id);
+  const toggleFavorite = useToggleFavorite(user?.id);
   const energyNames = product.energyIds
     .map((id) => energies.find((e) => e.id === id)?.name)
     .filter(Boolean) as string[];
   const onSale = product.discountPercent > 0;
   const fp = finalPrice(product);
+  const isFavorite = favoriteIds.includes(product.id);
+
+  const handleFavorite = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (loading) return;
+
+    if (!user) {
+      const redirect =
+        typeof window === "undefined"
+          ? "/catalogo"
+          : `${window.location.pathname}${window.location.search}`;
+      toast.info("Entre para salvar seus favoritos");
+      navigate({ to: "/login", search: { redirect } as never });
+      return;
+    }
+
+    const nextFavorite = !isFavorite;
+    toggleFavorite.mutate(
+      { productId: product.id, favorite: nextFavorite },
+      {
+        onSuccess: () =>
+          toast.success(nextFavorite ? "Adicionado aos favoritos" : "Removido dos favoritos"),
+        onError: (error) =>
+          toast.error(error instanceof Error ? error.message : "Não foi possível atualizar"),
+      },
+    );
+  };
 
   return (
     <Link
@@ -34,11 +71,16 @@ export function ProductCard({ product }: { product: Product }) {
         )}
         <button
           type="button"
-          onClick={(event) => event.preventDefault()}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-md bg-card/84 text-foreground shadow-sm backdrop-blur transition hover:text-primary"
+          onClick={handleFavorite}
+          disabled={toggleFavorite.isPending}
+          className={cn(
+            "absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-md bg-card/84 text-foreground shadow-sm backdrop-blur transition hover:text-primary disabled:opacity-70",
+            isFavorite && "text-primary",
+          )}
           aria-label="Favoritar"
+          aria-pressed={isFavorite}
         >
-          <Heart className="h-4 w-4" />
+          <Heart className={cn("h-4 w-4", isFavorite && "fill-primary")} />
         </button>
         {onSale && (
           <span className="absolute left-3 top-3 rounded-md bg-primary px-2.5 py-1 text-[0.68rem] font-bold uppercase text-primary-foreground">

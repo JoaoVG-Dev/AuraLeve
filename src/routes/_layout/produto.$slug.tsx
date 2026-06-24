@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   Gem,
@@ -14,9 +14,12 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "@/components/ProductCard";
+import { useAuth } from "@/hooks/use-auth";
 import { useCategories, useEnergies, useProducts } from "@/lib/catalog";
+import { useFavoriteProductIds, useToggleFavorite } from "@/lib/favorites";
 import { useShop } from "@/lib/store";
 import { finalPrice, formatBRL } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_layout/produto/$slug")({
   component: ProductPage,
@@ -26,9 +29,13 @@ type Tab = "descricao" | "cristais" | "significado" | "cuidados" | "envio";
 
 function ProductPage() {
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const { data: products = [], isLoading } = useProducts();
   const { data: categories = [] } = useCategories();
   const { data: energies = [] } = useEnergies();
+  const { data: favoriteIds = [] } = useFavoriteProductIds(user?.id);
+  const toggleFavorite = useToggleFavorite(user?.id);
   const { addToCart, cart } = useShop();
   const product = products.find((p) => p.slug === slug);
   const [qty, setQty] = useState(1);
@@ -74,6 +81,7 @@ function ProductPage() {
   const availableToAdd = Math.max(0, product.stock - cartQty);
   const displayImage = selectedImage || product.image;
   const gallery = [product.image, ...related.map((p) => p.image)].filter(Boolean).slice(0, 5);
+  const isFavorite = favoriteIds.includes(product.id);
 
   const add = () => {
     const safeQty = Math.min(qty, availableToAdd);
@@ -83,6 +91,31 @@ function ProductPage() {
     }
     addToCart(product.id, safeQty);
     toast.success("Adicionado ao carrinho");
+  };
+
+  const toggleProductFavorite = () => {
+    if (authLoading) return;
+
+    if (!user) {
+      const redirect =
+        typeof window === "undefined"
+          ? `/produto/${product.slug}`
+          : `${window.location.pathname}${window.location.search}`;
+      toast.info("Entre para salvar seus favoritos");
+      navigate({ to: "/login", search: { redirect } as never });
+      return;
+    }
+
+    const nextFavorite = !isFavorite;
+    toggleFavorite.mutate(
+      { productId: product.id, favorite: nextFavorite },
+      {
+        onSuccess: () =>
+          toast.success(nextFavorite ? "Adicionado aos favoritos" : "Removido dos favoritos"),
+        onError: (error) =>
+          toast.error(error instanceof Error ? error.message : "Não foi possível atualizar"),
+      },
+    );
   };
 
   return (
@@ -210,8 +243,18 @@ function ProductPage() {
               <ShoppingBag className="h-4 w-4" />
               {availableToAdd > 0 ? "Adicionar ao carrinho" : "Indisponível"}
             </button>
-            <button className="aura-button-outline h-12 px-4" type="button" aria-label="Favoritar">
-              <Heart className="h-4 w-4" />
+            <button
+              onClick={toggleProductFavorite}
+              disabled={toggleFavorite.isPending}
+              className={cn(
+                "aura-button-outline h-12 px-4 disabled:opacity-70",
+                isFavorite && "border-primary text-primary",
+              )}
+              type="button"
+              aria-label="Favoritar"
+              aria-pressed={isFavorite}
+            >
+              <Heart className={cn("h-4 w-4", isFavorite && "fill-primary")} />
             </button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">

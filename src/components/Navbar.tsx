@@ -84,13 +84,14 @@ export function Navbar() {
           >
             <Search className="h-4 w-4" />
           </Link>
-          <button
-            type="button"
+          <Link
+            to="/minha-conta"
+            search={{ tab: "favorites" } as never}
             className="hidden h-10 w-10 items-center justify-center rounded-md text-foreground transition hover:bg-champagne hover:text-primary sm:inline-flex"
             aria-label="Favoritos"
           >
             <Heart className="h-4 w-4" />
-          </button>
+          </Link>
           <Link
             to="/carrinho"
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground transition hover:bg-champagne hover:text-primary"

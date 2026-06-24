@@ -13,24 +13,30 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { AuraLeveSymbol } from "@/components/AuraLeveLogo";
+import { ProductCard } from "@/components/ProductCard";
 import { useAuth, signOut } from "@/hooks/use-auth";
 import { useMyOrders, useOrderDetail } from "@/lib/catalog";
+import { useFavoriteProducts } from "@/lib/favorites";
 import { getMyProfile, saveMyProfile } from "@/lib/profile.functions";
 import { formatBRL } from "@/lib/types";
 
 export const Route = createFileRoute("/_layout/minha-conta")({
+  validateSearch: z.object({
+    tab: z.enum(["data", "orders", "favorites"]).optional(),
+  }),
   component: AccountPage,
 });
 
-type Tab = "data" | "orders";
+type Tab = "data" | "orders" | "favorites";
 
 const menu = [
   { id: "data" as const, label: "Minha conta", icon: User },
   { id: "orders" as const, label: "Meus pedidos", icon: Package },
+  { id: "favorites" as const, label: "Favoritos", icon: Heart },
   { id: "addresses", label: "Endereços", icon: MapPin, disabled: true },
   { id: "payments", label: "Formas de pagamento", icon: CreditCard, disabled: true },
-  { id: "favorites", label: "Favoritos", icon: Heart, disabled: true },
   { id: "reviews", label: "Avaliações", icon: Star, disabled: true },
   { id: "settings", label: "Configurações", icon: Settings, disabled: true },
 ];
@@ -38,7 +44,8 @@ const menu = [
 function AccountPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("data");
+  const search = Route.useSearch();
+  const tab: Tab = search.tab ?? "data";
   const [openOrderId, setOpenOrderId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -47,7 +54,13 @@ function AccountPage() {
   const saveProfileServer = useServerFn(saveMyProfile);
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
+    if (!loading && !user) {
+      const redirect =
+        typeof window === "undefined"
+          ? "/minha-conta"
+          : `${window.location.pathname}${window.location.search}`;
+      navigate({ to: "/login", search: { redirect } as never });
+    }
   }, [user, loading, navigate]);
 
   useEffect(() => {
@@ -108,8 +121,11 @@ function AccountPage() {
                   type="button"
                   disabled={item.disabled}
                   onClick={() => {
-                    if (item.id === "data" || item.id === "orders") {
-                      setTab(item.id);
+                    if (item.id === "data" || item.id === "orders" || item.id === "favorites") {
+                      navigate({
+                        to: "/minha-conta",
+                        search: { tab: item.id === "data" ? undefined : item.id } as never,
+                      });
                       setOpenOrderId(null);
                     }
                   }}
@@ -177,7 +193,47 @@ function AccountPage() {
           {tab === "orders" && openOrderId && (
             <OrderDetail orderId={openOrderId} onBack={() => setOpenOrderId(null)} />
           )}
+          {tab === "favorites" && <FavoritesList userId={user.id} />}
         </section>
+      </div>
+    </div>
+  );
+}
+
+function FavoritesList({ userId }: { userId: string }) {
+  const { data: favorites = [], isLoading } = useFavoriteProducts(userId);
+
+  if (isLoading) {
+    return <div className="py-12 text-center text-muted-foreground">Carregando favoritos...</div>;
+  }
+
+  if (favorites.length === 0) {
+    return (
+      <div className="aura-card p-10 text-center">
+        <Heart className="mx-auto mb-4 h-12 w-12 text-primary" />
+        <h2 className="font-display text-3xl text-foreground">Nenhum favorito salvo ainda</h2>
+        <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+          Toque no coração das peças para montar sua curadoria pessoal.
+        </p>
+        <Link to="/catalogo" className="aura-button mt-6">
+          Explorar catálogo
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="aura-card p-5 md:p-6">
+        <h2 className="font-display text-3xl text-foreground">Favoritos</h2>
+        <p className="text-sm text-muted-foreground">
+          Suas peças salvas ficam aqui para você continuar depois.
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+        {favorites.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
       </div>
     </div>
   );
