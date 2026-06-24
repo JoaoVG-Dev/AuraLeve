@@ -27,9 +27,7 @@ export function Navbar() {
 
   const links = [
     { to: "/", label: "Início" },
-    { to: "/catalogo", label: "Coleções" },
-    { to: "/catalogo", label: "Acessórios" },
-    { to: "/catalogo", label: "Cristais" },
+    { to: "/catalogo", label: "Catálogo" },
     { to: "/sobre", label: "Sobre" },
     ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
   ];
@@ -58,7 +56,11 @@ export function Navbar() {
         <nav className="hidden items-center gap-1 lg:flex">
           {links.map((l, index) => {
             const active =
-              l.to === "/" ? path === "/" : l.label === "Admin" ? path.startsWith("/admin") : false;
+              l.to === "/"
+                ? path === "/"
+                : l.label === "Admin"
+                  ? path.startsWith("/admin")
+                  : path === l.to;
             return (
               <Link
                 key={`${l.label}-${index}`}
