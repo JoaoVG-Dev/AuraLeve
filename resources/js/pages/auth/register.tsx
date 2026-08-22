@@ -1,11 +1,10 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import {
+    AuraButton,
+    AuraField,
+    AuraLink,
+    AuraPasswordField,
+} from '@/components/aura/auth-ui';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
@@ -16,7 +15,7 @@ type Props = {
 export default function Register({ passwordRules }: Props) {
     return (
         <>
-            <Head title="Register" />
+            <Head title="Criar conta" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
@@ -25,87 +24,73 @@ export default function Register({ passwordRules }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    type="text"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="name"
-                                    name="name"
-                                    placeholder="Full name"
-                                />
-                                <InputError
-                                    message={errors.name}
-                                    className="mt-2"
-                                />
-                            </div>
+                        <div className="grid gap-5">
+                            <AuraField
+                                label="Nome completo"
+                                type="text"
+                                name="name"
+                                required
+                                autoFocus
+                                tabIndex={1}
+                                autoComplete="name"
+                                placeholder="Como está no documento"
+                                error={errors.name}
+                            />
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="email"
-                                    name="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
+                            <AuraField
+                                label="E-mail"
+                                type="email"
+                                name="email"
+                                required
+                                tabIndex={2}
+                                autoComplete="email"
+                                placeholder="seu@email.com"
+                                error={errors.email}
+                            />
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
-                                <PasswordInput
-                                    id="password"
-                                    required
-                                    tabIndex={3}
-                                    autoComplete="new-password"
-                                    name="password"
-                                    placeholder="Password"
-                                    passwordrules={passwordRules}
-                                />
-                                <InputError message={errors.password} />
-                            </div>
+                            <AuraPasswordField
+                                label="Senha"
+                                name="password"
+                                required
+                                tabIndex={3}
+                                autoComplete="new-password"
+                                placeholder="Mínimo de 8 caracteres"
+                                passwordrules={passwordRules}
+                                error={errors.password}
+                            />
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm password
-                                </Label>
-                                <PasswordInput
-                                    id="password_confirmation"
-                                    required
-                                    tabIndex={4}
-                                    autoComplete="new-password"
-                                    name="password_confirmation"
-                                    placeholder="Confirm password"
-                                    passwordrules={passwordRules}
-                                />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
-                            </div>
+                            <AuraPasswordField
+                                label="Confirmar senha"
+                                name="password_confirmation"
+                                required
+                                tabIndex={4}
+                                autoComplete="new-password"
+                                placeholder="Repita a senha"
+                                passwordrules={passwordRules}
+                                error={errors.password_confirmation}
+                            />
 
-                            <Button
+                            <AuraButton
                                 type="submit"
-                                className="mt-2 w-full"
+                                className="mt-2"
                                 tabIndex={5}
+                                processing={processing}
                                 data-test="register-user-button"
                             >
-                                {processing && <Spinner />}
-                                Create account
-                            </Button>
+                                CRIAR CONTA
+                            </AuraButton>
+
+                            <p className="text-center text-[13px] leading-6 text-[#a2988a]">
+                                Ao criar sua conta você concorda em receber
+                                avisos sobre o seu pedido.
+                            </p>
                         </div>
 
-                        <div className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <TextLink href={login()} tabIndex={6}>
-                                Log in
-                            </TextLink>
+                        <div className="text-center text-sm text-[#8a8178]">
+                            Já tem conta?{' '}
+                            <AuraLink href={login()} tabIndex={6}>
+                                Entrar
+                            </AuraLink>
                         </div>
                     </>
                 )}
@@ -115,6 +100,7 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: 'Create an account',
-    description: 'Enter your details below to create your account',
+    title: 'Criar sua conta',
+    description:
+        'Leva um minuto — depois é só finalizar o pedido e acompanhar a produção da sua peça.',
 };

@@ -1,9 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import { AuraButton, AuraPasswordField } from '@/components/aura/auth-ui';
 import { store } from '@/routes/password/confirm';
 /* @chisel-passkeys */
 import {
@@ -16,7 +12,7 @@ import PasskeyVerify from '@/components/passkey-verify';
 export default function ConfirmPassword() {
     return (
         <>
-            <Head title="Confirm password" />
+            <Head title="Confirmar senha" />
 
             {/* @chisel-passkeys */}
             <PasskeyVerify
@@ -24,38 +20,32 @@ export default function ConfirmPassword() {
                     options: confirmOptions(),
                     submit: confirmStore(),
                 }}
-                label="Confirm with passkey"
-                loadingLabel="Confirming..."
-                separator="Or confirm with password"
+                label="Confirmar com passkey"
+                loadingLabel="Confirmando..."
+                separator="ou confirme com a senha"
             />
             {/* @end-chisel-passkeys */}
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
-                    <div className="space-y-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <PasswordInput
-                                id="password"
-                                name="password"
-                                placeholder="Password"
-                                autoComplete="current-password"
-                                autoFocus
-                            />
+                    <div className="grid gap-5">
+                        <AuraPasswordField
+                            label="Senha"
+                            name="password"
+                            placeholder="Sua senha"
+                            autoComplete="current-password"
+                            autoFocus
+                            error={errors.password}
+                        />
 
-                            <InputError message={errors.password} />
-                        </div>
-
-                        <div className="flex items-center">
-                            <Button
-                                className="w-full"
-                                disabled={processing}
-                                data-test="confirm-password-button"
-                            >
-                                {processing && <Spinner />}
-                                Confirm password
-                            </Button>
-                        </div>
+                        <AuraButton
+                            type="submit"
+                            className="mt-2"
+                            processing={processing}
+                            data-test="confirm-password-button"
+                        >
+                            CONFIRMAR
+                        </AuraButton>
                     </div>
                 )}
             </Form>
@@ -64,7 +54,7 @@ export default function ConfirmPassword() {
 }
 
 ConfirmPassword.layout = {
-    title: 'Confirm password',
+    title: 'Confirmar senha',
     description:
-        'This is a secure area of the application. Please confirm your password before continuing.',
+        'Esta é uma área protegida. Confirme sua senha para continuar.',
 };

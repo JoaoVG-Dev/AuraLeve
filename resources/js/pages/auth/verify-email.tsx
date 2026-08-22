@@ -1,37 +1,36 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { AuraButton, AuraLink, AuraNotice } from '@/components/aura/auth-ui';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
 export default function VerifyEmail({ status }: { status?: string }) {
     return (
         <>
-            <Head title="Email verification" />
+            <Head title="Confirmar e-mail" />
 
             {status === 'verification-link-sent' && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    A new verification link has been sent to the email address
-                    you provided during registration.
+                <div className="mb-6">
+                    <AuraNotice tone="success">
+                        Enviamos um novo link de confirmação para o e-mail
+                        cadastrado.
+                    </AuraNotice>
                 </div>
             )}
 
-            <Form {...send.form()} className="space-y-6 text-center">
+            <Form {...send.form()} className="space-y-6">
                 {({ processing }) => (
                     <>
-                        <Button disabled={processing} variant="secondary">
-                            {processing && <Spinner />}
-                            Resend verification email
-                        </Button>
-
-                        <TextLink
-                            href={logout()}
-                            className="mx-auto block text-sm"
+                        <AuraButton
+                            type="submit"
+                            variant="ghost"
+                            processing={processing}
                         >
-                            Log out
-                        </TextLink>
+                            REENVIAR E-MAIL DE CONFIRMAÇÃO
+                        </AuraButton>
+
+                        <div className="text-center text-sm text-[#8a8178]">
+                            <AuraLink href={logout()}>Sair da conta</AuraLink>
+                        </div>
                     </>
                 )}
             </Form>
@@ -40,7 +39,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
 }
 
 VerifyEmail.layout = {
-    title: 'Email verification',
+    title: 'Confirme seu e-mail',
     description:
-        'Please verify your email address by clicking on the link we just emailed to you.',
+        'Enviamos um link para o seu e-mail. Clique nele para liberar o acesso à sua conta.',
 };

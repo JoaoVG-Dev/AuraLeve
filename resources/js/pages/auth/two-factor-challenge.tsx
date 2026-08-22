@@ -1,9 +1,7 @@
 import { Form, Head, setLayoutProps } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { useMemo, useState } from 'react';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { AuraButton, AuraError, AuraField } from '@/components/aura/auth-ui';
 import {
     InputOTP,
     InputOTPGroup,
@@ -23,18 +21,18 @@ export default function TwoFactorChallenge() {
     }>(() => {
         if (showRecoveryInput) {
             return {
-                title: 'Recovery code',
+                title: 'Código de recuperação',
                 description:
-                    'Please confirm access to your account by entering one of your emergency recovery codes.',
-                toggleText: 'login using an authentication code',
+                    'Confirme o acesso à sua conta usando um dos códigos de emergência que você guardou.',
+                toggleText: 'entrar com o código do aplicativo',
             };
         }
 
         return {
-            title: 'Authentication code',
+            title: 'Código de verificação',
             description:
-                'Enter the authentication code provided by your authenticator application.',
-            toggleText: 'login using a recovery code',
+                'Informe o código gerado pelo seu aplicativo autenticador.',
+            toggleText: 'entrar com um código de recuperação',
         };
     }, [showRecoveryInput]);
 
@@ -51,30 +49,27 @@ export default function TwoFactorChallenge() {
 
     return (
         <>
-            <Head title="Two-factor authentication" />
+            <Head title="Verificação em duas etapas" />
 
             <div className="space-y-6">
                 <Form
                     {...store.form()}
-                    className="space-y-4"
+                    className="space-y-5"
                     resetOnError
                     resetOnSuccess={!showRecoveryInput}
                 >
                     {({ errors, processing, clearErrors }) => (
                         <>
                             {showRecoveryInput ? (
-                                <>
-                                    <Input
-                                        name="recovery_code"
-                                        type="text"
-                                        placeholder="Enter recovery code"
-                                        autoFocus={showRecoveryInput}
-                                        required
-                                    />
-                                    <InputError
-                                        message={errors.recovery_code}
-                                    />
-                                </>
+                                <AuraField
+                                    label="Código de recuperação"
+                                    name="recovery_code"
+                                    type="text"
+                                    placeholder="Informe o código de recuperação"
+                                    autoFocus={showRecoveryInput}
+                                    required
+                                    error={errors.recovery_code}
+                                />
                             ) : (
                                 <div className="flex flex-col items-center justify-center space-y-3 text-center">
                                     <div className="flex w-full items-center justify-center">
@@ -100,23 +95,19 @@ export default function TwoFactorChallenge() {
                                             </InputOTPGroup>
                                         </InputOTP>
                                     </div>
-                                    <InputError message={errors.code} />
+                                    <AuraError message={errors.code} />
                                 </div>
                             )}
 
-                            <Button
-                                type="submit"
-                                className="w-full"
-                                disabled={processing}
-                            >
-                                Continue
-                            </Button>
+                            <AuraButton type="submit" processing={processing}>
+                                CONTINUAR
+                            </AuraButton>
 
-                            <div className="text-center text-sm text-muted-foreground">
-                                <span>or you can </span>
+                            <div className="text-center text-sm text-[#8a8178]">
+                                <span>ou você pode </span>
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                    className="cursor-pointer text-[#a97b34] underline decoration-[#e0cfa9] underline-offset-4 transition hover:text-[#7e5a20] hover:decoration-[#b0813c]"
                                     onClick={() =>
                                         toggleRecoveryMode(clearErrors)
                                     }

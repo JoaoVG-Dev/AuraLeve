@@ -1,12 +1,12 @@
 import { Form, Head } from '@inertiajs/react';
-import InputError from '@/components/input-error';
-import PasswordInput from '@/components/password-input';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+import {
+    AuraButton,
+    AuraCheckbox,
+    AuraField,
+    AuraLink,
+    AuraNotice,
+    AuraPasswordField,
+} from '@/components/aura/auth-ui';
 /* @chisel-registration */
 import { register } from '@/routes';
 /* @end-chisel-registration */
@@ -24,10 +24,20 @@ type Props = {
 export default function Login({ status, canResetPassword }: Props) {
     return (
         <>
-            <Head title="Log in" />
+            <Head title="Entrar" />
+
+            {status && (
+                <div className="mb-6">
+                    <AuraNotice tone="success">{status}</AuraNotice>
+                </div>
+            )}
 
             {/* @chisel-passkeys */}
-            <PasskeyVerify />
+            <PasskeyVerify
+                label="Entrar com passkey"
+                loadingLabel="Autenticando..."
+                separator="ou continue com e-mail"
+            />
             {/* @end-chisel-passkeys */}
 
             <Form
@@ -37,89 +47,75 @@ export default function Login({ status, canResetPassword }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    required
-                                    autoFocus
-                                    tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
-                                />
-                                <InputError message={errors.email} />
-                            </div>
+                        <div className="grid gap-5">
+                            <AuraField
+                                label="E-mail"
+                                type="email"
+                                name="email"
+                                required
+                                autoFocus
+                                tabIndex={1}
+                                autoComplete="email"
+                                placeholder="seu@email.com"
+                                error={errors.email}
+                            />
 
-                            <div className="grid gap-2">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    {canResetPassword && (
-                                        <TextLink
+                            <AuraPasswordField
+                                label="Senha"
+                                name="password"
+                                required
+                                tabIndex={2}
+                                autoComplete="current-password"
+                                placeholder="Sua senha"
+                                error={errors.password}
+                                hint={
+                                    canResetPassword ? (
+                                        <AuraLink
                                             href={request()}
-                                            className="ml-auto text-sm"
                                             tabIndex={5}
+                                            className="text-[13px]"
                                         >
-                                            Forgot your password?
-                                        </TextLink>
-                                    )}
-                                </div>
-                                <PasswordInput
-                                    id="password"
-                                    name="password"
-                                    required
-                                    tabIndex={2}
-                                    autoComplete="current-password"
-                                    placeholder="Password"
-                                />
-                                <InputError message={errors.password} />
-                            </div>
+                                            Esqueci minha senha
+                                        </AuraLink>
+                                    ) : undefined
+                                }
+                            />
 
-                            <div className="flex items-center space-x-3">
-                                <Checkbox
-                                    id="remember"
-                                    name="remember"
-                                    tabIndex={3}
-                                />
-                                <Label htmlFor="remember">Remember me</Label>
-                            </div>
+                            <AuraCheckbox
+                                id="remember"
+                                name="remember"
+                                tabIndex={3}
+                                label="Continuar conectada neste dispositivo"
+                            />
 
-                            <Button
+                            <AuraButton
                                 type="submit"
-                                className="mt-4 w-full"
+                                className="mt-2"
                                 tabIndex={4}
-                                disabled={processing}
+                                processing={processing}
                                 data-test="login-button"
                             >
-                                {processing && <Spinner />}
-                                Log in
-                            </Button>
+                                ENTRAR
+                            </AuraButton>
                         </div>
 
                         {/* @chisel-registration */}
-                        <div className="text-center text-sm text-muted-foreground">
-                            Don't have an account?{' '}
-                            <TextLink href={register()} tabIndex={5}>
-                                Sign up
-                            </TextLink>
+                        <div className="text-center text-sm text-[#8a8178]">
+                            Ainda não tem conta?{' '}
+                            <AuraLink href={register()} tabIndex={5}>
+                                Criar conta
+                            </AuraLink>
                         </div>
                         {/* @end-chisel-registration */}
                     </>
                 )}
             </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
         </>
     );
 }
 
 Login.layout = {
-    title: 'Log in to your account',
-    description: 'Enter your email and password below to log in',
+    title: 'Entrar na sua conta',
+    description:
+        'Acompanhe pedidos, salve endereços e volte para as peças que você separou.',
 };
