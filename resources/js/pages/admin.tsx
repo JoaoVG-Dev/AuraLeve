@@ -734,7 +734,7 @@ function Atelier() {
                 <div className="aura-display text-xl">Fila de produção</div>
                 <div className="mt-6 grid gap-5">
                     {[
-                        ['Japamala Olho de Tigre · 4 peças', '75%'],
+                        ['Japamala Lápis Lazúli · 4 peças', '75%'],
                         ['Colar Quartzo Rosa · 2 peças', '40%'],
                         ['Patuá Proteção · 6 peças', '20%'],
                         ['Pulseira 7 Nós · 10 peças', '90%'],
@@ -759,7 +759,7 @@ function Atelier() {
                 <div className="aura-display text-xl">Pedras em estoque</div>
                 <div className="mt-6 grid gap-4">
                     {[
-                        ['Olho de Tigre 8mm', '1.240 contas', '#a97b34'],
+                        ['Lápis Lazúli 8mm', '1.240 contas', '#35559c'],
                         ['Quartzo Rosa 8mm', '860 contas', '#e2b7b6'],
                         ['Hematita 6mm', '120 contas', '#4a4a52'],
                         ['Ágata Branca 8mm', '640 contas', '#e6ddcd'],

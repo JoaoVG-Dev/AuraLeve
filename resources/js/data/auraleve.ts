@@ -37,22 +37,25 @@ export const brand = {
     symbol: '/images/brand/auraleve-symbol.png',
     video: '/videos/hero.mp4',
     board: '/images/auraleve/mobile-board.png',
-    splashHands: '/images/auraleve/splash-hands.png',
-    homeHero: '/images/auraleve/home-hero.png',
+    splashHands:
+        '/images/auraleve/official/official-atelier-blue-japamala.jpeg',
+    homeHero: '/images/auraleve/official/official-hero-blue-japamala.jpeg',
+    detailHands: '/images/auraleve/official/official-close-blue-japamala.jpeg',
 };
 
 export const products: Product[] = [
     {
         id: 'p6',
-        name: 'Japamala Olho de Tigre',
+        name: 'Japamala Lápis Lazúli',
         price: 219.9,
         cat: 'Japamalas',
-        stone: 'Olho de Tigre',
+        stone: 'Lápis Lazúli',
         badge: 'MAIS VENDIDA',
         reviews: 120,
-        desc: 'Proteção, coragem e foco. O Olho de Tigre fortalece a autoconfiança e atrai boas oportunidades.',
-        image: '/images/auraleve/product-p6.png',
-        detailImage: '/images/auraleve/product-p6-detail.png',
+        desc: 'Intuição, presença e verdade. O Lápis Lazúli ajuda a acalmar a mente e sustentar práticas de conexão.',
+        image: '/images/auraleve/official/official-product-blue-japamala.jpeg',
+        detailImage:
+            '/images/auraleve/official/official-close-blue-japamala.jpeg',
     },
     {
         id: 'p1',
@@ -117,7 +120,7 @@ export const categories = [
 ];
 
 export const intentions = [
-    { label: 'Proteção', note: 'Olho de Tigre, Hematita' },
+    { label: 'Proteção', note: 'Lápis Lazúli, Hematita' },
     { label: 'Amor-próprio', note: 'Quartzo Rosa' },
     { label: 'Foco', note: 'Ametista, Sodalita' },
     { label: 'Prosperidade', note: 'Citrino, Pirita' },

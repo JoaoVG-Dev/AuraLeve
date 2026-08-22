@@ -3,13 +3,8 @@ import {
     ArrowRight,
     Check,
     ChevronDown,
-    Flame,
-    Gem,
-    Hand,
-    Heart,
     Menu,
     Minus,
-    Package,
     Plus,
     Search,
     ShoppingBag,
@@ -19,6 +14,13 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+import {
+    BeadsIcon,
+    FlameIcon,
+    HandIcon,
+    HeartIcon,
+    TruckIcon,
+} from '@/components/auraleve-icons';
 import {
     brand,
     brl,
@@ -288,7 +290,7 @@ export default function Welcome() {
                         </div>
                         <div className="absolute -bottom-6 left-2 h-32 w-32 overflow-hidden rounded-full bg-[#e4d7bf] shadow-[0_22px_48px_rgba(60,44,22,.22)] md:bottom-12 md:-left-12 md:h-44 md:w-44">
                             <img
-                                src="/images/auraleve/product-p6-detail.png"
+                                src={brand.detailHands}
                                 alt="Detalhe de pedra natural"
                                 className="h-full w-full object-cover"
                             />
@@ -384,7 +386,7 @@ export default function Welcome() {
                                 }
                             >
                                 <span className="grid h-[92px] w-[92px] place-items-center rounded-full bg-[#f4ebda] text-[#b0813c] transition group-hover:-translate-y-1 group-hover:bg-[#ecdfc4] group-hover:shadow-[0_16px_32px_rgba(90,68,32,.16)] md:h-[118px] md:w-[118px]">
-                                    <Gem strokeWidth={1.25} size={38} />
+                                    <BeadsIcon size={38} />
                                 </span>
                                 <span className="aura-display text-base">
                                     {intention.label}
@@ -712,13 +714,10 @@ function Hero() {
             id="top"
             className="relative flex min-h-[700px] items-center justify-center overflow-hidden bg-[#17130f] px-6 text-center text-[#f6ecdb]"
         >
-            <video
-                src={brand.video}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="absolute inset-0 h-full w-full object-cover brightness-[.62] saturate-[.9]"
+            <img
+                src={brand.homeHero}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover object-[54%_42%] brightness-[.58] saturate-[.95]"
             />
             <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_40%,rgba(18,13,9,.28)_0%,rgba(18,13,9,.72)_70%,rgba(18,13,9,.94)_100%)]" />
             <div className="relative z-10 flex max-w-2xl flex-col items-center">
@@ -850,10 +849,7 @@ function ProductCard({
                         }}
                         aria-label="Favoritar"
                     >
-                        <Heart
-                            size={17}
-                            className={fav ? 'fill-[#b0813c]' : undefined}
-                        />
+                        <HeartIcon filled={fav} size={17} />
                     </span>
                 </span>
                 <span className="mt-4 flex items-start justify-between gap-4">
@@ -947,10 +943,7 @@ function ProductSheet({
                             className="grid h-11 w-11 place-items-center rounded-full border border-[#e6dcc9] text-[#8a6b2c]"
                             aria-label="Favoritar"
                         >
-                            <Heart
-                                size={18}
-                                className={fav ? 'fill-[#b0813c]' : undefined}
-                            />
+                            <HeartIcon filled={fav} size={18} />
                         </button>
                     </div>
                     <p className="mt-5 text-[15px] leading-8 text-[#5c554d]">
@@ -1404,14 +1397,14 @@ function Toast({ children }: { children: string }) {
 
 function StoreFeatureStrip() {
     const features = [
-        [Gem, 'PEDRAS NATURAIS', 'Selecionadas com intenção e qualidade'],
-        [Hand, 'FEITO À MÃO', 'Cada peça é única e exclusiva'],
+        [BeadsIcon, 'PEDRAS NATURAIS', 'Selecionadas com intenção e qualidade'],
+        [HandIcon, 'FEITO À MÃO', 'Cada peça é única e exclusiva'],
         [
-            Flame,
+            FlameIcon,
             'ENERGIA E INTENÇÃO',
             'Acessórios que conectam beleza e propósito',
         ],
-        [Package, 'ENVIO PARA TODO BRASIL', 'Com carinho e segurança'],
+        [TruckIcon, 'ENVIO PARA TODO BRASIL', 'Com carinho e segurança'],
     ] as const;
 
     return (
@@ -1420,7 +1413,7 @@ function StoreFeatureStrip() {
                 {features.map(([Icon, title, body]) => (
                     <div key={title} className="flex items-center gap-4">
                         <span className="grid h-12 w-12 flex-none place-items-center rounded-full border border-[#e6dcc9] text-[#a97b34]">
-                            <Icon size={22} strokeWidth={1.4} />
+                            <Icon size={22} />
                         </span>
                         <span>
                             <span className="block text-[11px] tracking-[.12em]">

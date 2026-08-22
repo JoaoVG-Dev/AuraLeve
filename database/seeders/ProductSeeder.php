@@ -15,15 +15,15 @@ class ProductSeeder extends Seeder
         collect([
             [
                 'slug' => 'p6',
-                'name' => 'Japamala Olho de Tigre',
+                'name' => 'Japamala Lápis Lazúli',
                 'price' => 219.9,
                 'category' => 'Japamalas',
-                'stone' => 'Olho de Tigre',
+                'stone' => 'Lápis Lazúli',
                 'badge' => 'MAIS VENDIDA',
                 'reviews' => 120,
-                'description' => 'Proteção, coragem e foco. O Olho de Tigre fortalece a autoconfiança e atrai boas oportunidades.',
-                'image_path' => '/images/auraleve/product-p6.png',
-                'detail_image_path' => '/images/auraleve/product-p6-detail.png',
+                'description' => 'Intuição, presença e verdade. O Lápis Lazúli ajuda a acalmar a mente e sustentar práticas de conexão.',
+                'image_path' => '/images/auraleve/official/official-product-blue-japamala.jpeg',
+                'detail_image_path' => '/images/auraleve/official/official-close-blue-japamala.jpeg',
                 'stock' => 14,
             ],
             [

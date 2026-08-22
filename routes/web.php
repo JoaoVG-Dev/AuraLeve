@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminBootstrapController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderStatusController;
 use App\Http\Controllers\AdminProductStockController;
@@ -9,8 +10,13 @@ use App\Http\Controllers\MercadoPagoWebhookController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\StorefrontController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
-Route::get('/', StorefrontController::class)->name('home');
+Route::get('/', fn () => Inertia::render('coming-soon'))->name('home');
+Route::get('loja-preview', StorefrontController::class)->name('store.preview');
+Route::post('admin/bootstrap', AdminBootstrapController::class)
+    ->middleware('throttle:3,1')
+    ->name('admin.bootstrap');
 Route::post('mercado-pago/webhook', MercadoPagoWebhookController::class)->name('mercado-pago.webhook');
 
 Route::middleware('auth')->group(function () {
