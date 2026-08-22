@@ -23,4 +23,15 @@ return [
             'amount' => 35.9,
         ],
     ],
+
+    'uploads' => [
+        'product_image_storage' => env(
+            'AURALEVE_PRODUCT_IMAGE_STORAGE',
+            env('BLOB_READ_WRITE_TOKEN') ? 'vercel_blob' : 'public'
+        ),
+        'product_image_max_kb' => (int) env('AURALEVE_PRODUCT_IMAGE_MAX_KB', 4096),
+        'vercel_blob_api_url' => env('VERCEL_BLOB_API_URL', 'https://vercel.com/api/blob'),
+        'vercel_blob_token' => env('BLOB_READ_WRITE_TOKEN'),
+        'vercel_blob_store_id' => env('BLOB_STORE_ID'),
+    ],
 ];

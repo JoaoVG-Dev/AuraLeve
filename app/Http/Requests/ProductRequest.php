@@ -72,7 +72,7 @@ class ProductRequest extends FormRequest
             'description.required' => 'Descreva a peça para a loja.',
             'category.required' => 'Informe a categoria.',
             'price.required' => 'Informe o preço.',
-            'image_path.required' => 'Informe o caminho da imagem principal.',
+            'image_path.required' => 'Envie ou informe a imagem principal.',
             'slug.unique' => 'Já existe uma peça com esse identificador.',
         ];
     }

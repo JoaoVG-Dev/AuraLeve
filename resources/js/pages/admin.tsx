@@ -8,6 +8,7 @@ import {
     ExternalLink,
     Gift,
     Hammer,
+    ImageIcon,
     Mail,
     MapPin,
     Minus,
@@ -17,6 +18,7 @@ import {
     Plus,
     Truck,
     Trash2,
+    Upload,
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -1199,6 +1201,14 @@ const productFields = (product: Product | null) => ({
     active: product?.active ?? true,
 });
 
+type ProductValues = ReturnType<typeof productFields>;
+type ProductImageField = 'image_path' | 'detail_image_path';
+
+const csrfToken = () =>
+    document
+        .querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+        ?.content.trim() ?? '';
+
 function ProductDialog({
     product,
     onClose,
@@ -1211,13 +1221,63 @@ function ProductDialog({
     const [values, setValues] = useState(() => productFields(product));
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [processing, setProcessing] = useState(false);
+    const [uploading, setUploading] = useState<
+        Partial<Record<ProductImageField, boolean>>
+    >({});
 
-    const set = (
-        field: keyof ReturnType<typeof productFields>,
-        value: string | boolean,
-    ) => {
+    const set = (field: keyof ProductValues, value: string | boolean) => {
         setValues((current) => ({ ...current, [field]: value }));
         setErrors((current) => ({ ...current, [field]: '' }));
+    };
+
+    const uploadImage = async (field: ProductImageField, file: File | null) => {
+        if (!file) {
+            return;
+        }
+
+        setUploading((current) => ({ ...current, [field]: true }));
+        setErrors((current) => ({ ...current, [field]: '' }));
+
+        const payload = new FormData();
+        payload.append('slot', field);
+        payload.append('image', file);
+
+        try {
+            const response = await fetch('/admin/products/images', {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': csrfToken(),
+                },
+                body: payload,
+            });
+            const data = (await response.json().catch(() => ({}))) as {
+                url?: string;
+                message?: string;
+                errors?: Record<string, string[]>;
+            };
+
+            if (!response.ok || !data.url) {
+                setErrors((current) => ({
+                    ...current,
+                    [field]:
+                        data.errors?.image?.[0] ??
+                        data.message ??
+                        'Nao foi possivel enviar a foto.',
+                }));
+
+                return;
+            }
+
+            set(field, data.url);
+        } catch {
+            setErrors((current) => ({
+                ...current,
+                [field]: 'Nao foi possivel enviar a foto.',
+            }));
+        } finally {
+            setUploading((current) => ({ ...current, [field]: false }));
+        }
     };
 
     const submit = (event: FormEvent) => {
@@ -1342,28 +1402,28 @@ function ProductDialog({
                             onChange={(value) => set('slug', value)}
                         />
                     </div>
-                    <AdminField
+                    <ImageUploadField
                         error={errors.image_path}
+                        field="image_path"
                         label="Imagem principal"
-                        placeholder="/images/auraleve/product-p1.png"
-                        value={values.image_path}
                         onChange={(value) => set('image_path', value)}
+                        onUpload={(file) => uploadImage('image_path', file)}
+                        placeholder="/images/auraleve/product-p1.png"
+                        uploading={uploading.image_path}
+                        value={values.image_path}
                     />
-                    <AdminField
+                    <ImageUploadField
                         error={errors.detail_image_path}
+                        field="detail_image_path"
                         label="Imagem de detalhe (opcional)"
-                        placeholder="/images/auraleve/detail-p1.png"
-                        value={values.detail_image_path}
                         onChange={(value) => set('detail_image_path', value)}
+                        onUpload={(file) =>
+                            uploadImage('detail_image_path', file)
+                        }
+                        placeholder="/images/auraleve/detail-p1.png"
+                        uploading={uploading.detail_image_path}
+                        value={values.detail_image_path}
                     />
-
-                    {values.image_path && (
-                        <img
-                            src={values.image_path}
-                            alt=""
-                            className="h-40 w-full rounded-[18px] border border-[#ece3d2] object-cover"
-                        />
-                    )}
 
                     <label className="flex cursor-pointer items-center gap-3 text-sm text-[#5c554d]">
                         <input
@@ -1405,6 +1465,90 @@ function ProductDialog({
                     </button>
                 </div>
             </form>
+        </div>
+    );
+}
+
+function ImageUploadField({
+    error,
+    field,
+    label,
+    placeholder,
+    uploading = false,
+    value,
+    onChange,
+    onUpload,
+}: {
+    error?: string;
+    field: ProductImageField;
+    label: string;
+    placeholder: string;
+    uploading?: boolean;
+    value: string;
+    onChange: (value: string) => void;
+    onUpload: (file: File | null) => void;
+}) {
+    const inputId = `product-${field}-upload`;
+
+    return (
+        <div>
+            <span className="mb-2 block text-[11px] tracking-[.14em] text-[#8a8178] uppercase">
+                {label}
+            </span>
+            <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+                <input
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    placeholder={placeholder}
+                    className={cx(
+                        'h-12 w-full rounded-full border bg-[#fffdf9] px-5 text-[15px] transition outline-none focus:border-[#b0813c]',
+                        error ? 'border-[#a8503a]' : 'border-[#e6dcc9]',
+                    )}
+                />
+                <label
+                    htmlFor={inputId}
+                    className={cx(
+                        'inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full bg-[#26221e] px-5 text-xs tracking-[.14em] text-[#f6ecdb] transition hover:bg-[#3a3029]',
+                        uploading && 'pointer-events-none opacity-60',
+                    )}
+                >
+                    <Upload size={15} />
+                    {uploading ? 'ENVIANDO...' : 'ANEXAR FOTO'}
+                </label>
+                <input
+                    id={inputId}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={uploading}
+                    onChange={(event) => {
+                        onUpload(event.currentTarget.files?.[0] ?? null);
+                        event.currentTarget.value = '';
+                    }}
+                    className="sr-only"
+                />
+            </div>
+            {error && (
+                <span className="mt-1.5 block text-xs text-[#a8503a]">
+                    {error}
+                </span>
+            )}
+            {value && (
+                <div className="mt-3 overflow-hidden rounded-[18px] border border-[#ece3d2] bg-[#fffdf9]">
+                    <img
+                        src={value}
+                        alt=""
+                        className="h-40 w-full object-cover"
+                    />
+                    <div className="flex items-center gap-2 px-4 py-3 text-xs text-[#8a8178]">
+                        <ImageIcon size={14} />
+                        <span className="truncate">
+                            {field === 'image_path'
+                                ? 'Imagem principal'
+                                : 'Imagem de detalhe'}
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
