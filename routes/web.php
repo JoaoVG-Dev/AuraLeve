@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminBootstrapController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderStatusController;
+use App\Http\Controllers\AdminProductController;
 use App\Http\Controllers\AdminProductStockController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MercadoPagoReturnController;
@@ -35,6 +36,9 @@ Route::middleware(['auth', 'can:access-admin'])->group(function () {
     Route::get('admin', AdminController::class)->name('admin');
     Route::patch('admin/orders/{order}/status', AdminOrderStatusController::class)->name('admin.orders.status');
     Route::patch('admin/products/{product:slug}/stock', AdminProductStockController::class)->name('admin.products.stock');
+    Route::post('admin/products', [AdminProductController::class, 'store'])->name('admin.products.store');
+    Route::patch('admin/products/{product:slug}', [AdminProductController::class, 'update'])->name('admin.products.update');
+    Route::delete('admin/products/{product:slug}', [AdminProductController::class, 'destroy'])->name('admin.products.destroy');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

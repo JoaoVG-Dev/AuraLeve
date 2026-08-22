@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
 const AdminBootstrapController = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -16,7 +16,7 @@ AdminBootstrapController.definition = {
 
 /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
 AdminBootstrapController.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ AdminBootstrapController.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
 AdminBootstrapController.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -35,7 +35,7 @@ AdminBootstrapController.post = (options?: RouteQueryOptions): RouteDefinition<'
 
     /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
     const AdminBootstrapControllerForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -45,7 +45,7 @@ AdminBootstrapController.post = (options?: RouteQueryOptions): RouteDefinition<'
 
             /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
         AdminBootstrapControllerForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

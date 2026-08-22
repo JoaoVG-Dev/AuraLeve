@@ -3,7 +3,7 @@ import orders from './orders'
 import products from './products'
 /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
 export const bootstrap = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -18,7 +18,7 @@ bootstrap.definition = {
 
 /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
 bootstrap.url = (options?: RouteQueryOptions) => {
@@ -27,7 +27,7 @@ bootstrap.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
 bootstrap.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -37,7 +37,7 @@ bootstrap.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
     const bootstrapForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -47,7 +47,7 @@ bootstrap.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\AdminBootstrapController::__invoke
- * @see app/Http/Controllers/AdminBootstrapController.php:15
+ * @see app/Http/Controllers/AdminBootstrapController.php:19
  * @route '/admin/bootstrap'
  */
         bootstrapForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

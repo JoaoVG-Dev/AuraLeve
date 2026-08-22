@@ -7,6 +7,7 @@ import MercadoPagoReturnController from './MercadoPagoReturnController'
 import AdminController from './AdminController'
 import AdminOrderStatusController from './AdminOrderStatusController'
 import AdminProductStockController from './AdminProductStockController'
+import AdminProductController from './AdminProductController'
 import Settings from './Settings'
 const Controllers = {
     StorefrontController: Object.assign(StorefrontController, StorefrontController),
@@ -18,6 +19,7 @@ MercadoPagoReturnController: Object.assign(MercadoPagoReturnController, MercadoP
 AdminController: Object.assign(AdminController, AdminController),
 AdminOrderStatusController: Object.assign(AdminOrderStatusController, AdminOrderStatusController),
 AdminProductStockController: Object.assign(AdminProductStockController, AdminProductStockController),
+AdminProductController: Object.assign(AdminProductController, AdminProductController),
 Settings: Object.assign(Settings, Settings),
 }
 

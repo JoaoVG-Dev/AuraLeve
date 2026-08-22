@@ -7,9 +7,13 @@ import {
     Hammer,
     Minus,
     PackagePlus,
+    Pencil,
     Plus,
+    Trash2,
+    X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 
 import {
     brand,
@@ -98,6 +102,8 @@ export default function Admin({
         serverProducts?.length ? stockFromProducts(catalog) : initialStock,
     );
     const [toast, setToast] = useState('');
+    const [editing, setEditing] = useState<Product | null>(null);
+    const [creating, setCreating] = useState(false);
 
     useEffect(() => {
         if (!toast) {
@@ -108,6 +114,25 @@ export default function Admin({
 
         return () => window.clearTimeout(timer);
     }, [toast]);
+
+    // Re-sync with the server whenever Inertia hands us fresh props (after a
+    // stock change, a product save or an order status update).
+    const [synced, setSynced] = useState({
+        products: serverProducts,
+        orders: serverOrders,
+    });
+
+    if (synced.products !== serverProducts || synced.orders !== serverOrders) {
+        setSynced({ products: serverProducts, orders: serverOrders });
+
+        if (serverProducts?.length) {
+            setStock(stockFromProducts(serverProducts));
+        }
+
+        if (serverOrders?.length) {
+            setOrders(serverOrders);
+        }
+    }
 
     const meta = {
         visao: {
@@ -193,6 +218,30 @@ export default function Admin({
         });
     };
 
+    const removeProduct = (product: Product) => {
+        router.delete(`/admin/products/${product.id}`, {
+            preserveScroll: true,
+            onSuccess: () => setToast(`${product.name} removida`),
+            onError: (errors) =>
+                setToast(
+                    (errors.product as string | undefined) ??
+                        'Não foi possível remover a peça',
+                ),
+        });
+    };
+
+    const headerAction = () => {
+        if (view === 'pedidos' || view === 'atelie') {
+            setToast(`${meta.action.toLowerCase()} — a definir`);
+
+            return;
+        }
+
+        setEditing(null);
+        setCreating(true);
+        setView('produtos');
+    };
+
     return (
         <>
             <Head title="Painel do Ateliê - AuraLeve" />
@@ -253,11 +302,7 @@ export default function Admin({
                                 </div>
                                 <button
                                     type="button"
-                                    onClick={() =>
-                                        setToast(
-                                            `${meta.action.toLowerCase()} — a definir`,
-                                        )
-                                    }
+                                    onClick={headerAction}
                                     className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#b0813c] px-6 text-xs tracking-[.14em] text-[#fffdf8] transition hover:bg-[#96702f]"
                                 >
                                     <PackagePlus size={15} />
@@ -281,6 +326,15 @@ export default function Admin({
                                     products={catalog}
                                     stock={stock}
                                     onStock={updateStock}
+                                    onCreate={() => {
+                                        setEditing(null);
+                                        setCreating(true);
+                                    }}
+                                    onEdit={(product) => {
+                                        setCreating(false);
+                                        setEditing(product);
+                                    }}
+                                    onRemove={removeProduct}
                                 />
                             )}
                             {view === 'atelie' && <Atelier />}
@@ -317,6 +371,21 @@ export default function Admin({
                         </button>
                     ))}
                 </nav>
+
+                {(creating || editing) && (
+                    <ProductDialog
+                        product={editing}
+                        onClose={() => {
+                            setCreating(false);
+                            setEditing(null);
+                        }}
+                        onSaved={(message) => {
+                            setCreating(false);
+                            setEditing(null);
+                            setToast(message);
+                        }}
+                    />
+                )}
 
                 {toast && (
                     <div
@@ -615,8 +684,8 @@ function Orders({
                 })}
             </div>
             <div className="mt-4 text-xs text-[#8a8178]">
-                Toque no status para avançar o pedido: em preparação, enviado,
-                entregue.
+                Toque no número ou no nome para ver o pedido completo; toque no
+                status para avançá-lo: em preparação, enviado, entregue.
             </div>
         </div>
     );
@@ -649,10 +718,16 @@ function ProductsStock({
     products,
     stock,
     onStock,
+    onCreate,
+    onEdit,
+    onRemove,
 }: {
     products: Product[];
     stock: Record<string, number>;
     onStock: (id: string, delta: number) => void;
+    onCreate: () => void;
+    onEdit: (product: Product) => void;
+    onRemove: (product: Product) => void;
 }) {
     return (
         <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -719,11 +794,331 @@ function ProductsStock({
                                     </button>
                                 </span>
                             </div>
+                            <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f2ebdd] pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => onEdit(product)}
+                                    className="inline-flex items-center gap-2 text-xs tracking-[.1em] text-[#a97b34] transition hover:text-[#7e5a20]"
+                                >
+                                    <Pencil size={14} />
+                                    EDITAR
+                                </button>
+                                <div className="flex items-center gap-3">
+                                    {product.active === false && (
+                                        <span className="rounded-full bg-[#eae5dc] px-3 py-1.5 text-[11px] text-[#5c554d]">
+                                            Inativa
+                                        </span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => onRemove(product)}
+                                        className="inline-flex items-center gap-2 text-xs tracking-[.1em] text-[#a89d8c] transition hover:text-[#a8503a]"
+                                    >
+                                        <Trash2 size={14} />
+                                        EXCLUIR
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </article>
                 );
             })}
+
+            <button
+                type="button"
+                onClick={onCreate}
+                className="grid min-h-56 place-items-center rounded-[20px] border border-dashed border-[#d5c3a0] bg-[#fbf6ec] p-8 text-center transition hover:border-[#b0813c]"
+            >
+                <span>
+                    <PackagePlus
+                        className="mx-auto text-[#b0813c]"
+                        size={26}
+                        strokeWidth={1.4}
+                    />
+                    <span className="aura-display mt-4 block text-lg">
+                        Nova peça
+                    </span>
+                    <span className="mt-2 block text-xs leading-5 text-[#8a8178]">
+                        Cadastre uma peça nova no catálogo da loja
+                    </span>
+                </span>
+            </button>
         </div>
+    );
+}
+
+const productFields = (product: Product | null) => ({
+    name: product?.name ?? '',
+    slug: product?.id ?? '',
+    description: product?.desc ?? '',
+    category: product?.cat ?? '',
+    stone: product?.stone ?? '',
+    price: product ? String(product.price) : '',
+    stock: String(product?.stock ?? 0),
+    badge: product?.badge ?? '',
+    reviews: String(product?.reviews ?? 0),
+    image_path: product?.image ?? '',
+    detail_image_path: product?.detailImage ?? '',
+    active: product?.active ?? true,
+});
+
+function ProductDialog({
+    product,
+    onClose,
+    onSaved,
+}: {
+    product: Product | null;
+    onClose: () => void;
+    onSaved: (message: string) => void;
+}) {
+    const [values, setValues] = useState(() => productFields(product));
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [processing, setProcessing] = useState(false);
+
+    const set = (
+        field: keyof ReturnType<typeof productFields>,
+        value: string | boolean,
+    ) => {
+        setValues((current) => ({ ...current, [field]: value }));
+        setErrors((current) => ({ ...current, [field]: '' }));
+    };
+
+    const submit = (event: FormEvent) => {
+        event.preventDefault();
+        setProcessing(true);
+
+        const options = {
+            preserveScroll: true,
+            onSuccess: () =>
+                onSaved(
+                    product
+                        ? `${values.name} atualizada`
+                        : `${values.name} adicionada ao catálogo`,
+                ),
+            onError: (nextErrors: Record<string, string>) =>
+                setErrors(nextErrors),
+            onFinish: () => setProcessing(false),
+        };
+
+        if (product) {
+            router.patch(`/admin/products/${product.id}`, values, options);
+
+            return;
+        }
+
+        router.post('/admin/products', values, options);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(30,22,12,.42)] p-0 backdrop-blur-sm md:items-center md:p-6">
+            <form
+                onSubmit={submit}
+                className="aura-hide-scrollbar max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-t-[26px] bg-[#fdfaf4] p-6 md:rounded-[26px] md:p-8"
+            >
+                <div className="flex items-start justify-between gap-6">
+                    <div>
+                        <div className="text-[11px] tracking-[.2em] text-[#a97b34]">
+                            {product ? 'EDITAR PEÇA' : 'NOVA PEÇA'}
+                        </div>
+                        <h2 className="aura-display mt-3 text-2xl">
+                            {product ? product.name : 'Cadastrar no catálogo'}
+                        </h2>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Fechar"
+                        className="grid h-10 w-10 flex-none place-items-center rounded-full border border-[#e6dcc9] bg-[#fffdf9] text-[#5c554d]"
+                    >
+                        <X size={17} />
+                    </button>
+                </div>
+
+                <div className="mt-6 grid gap-4">
+                    <AdminField
+                        error={errors.name}
+                        label="Nome"
+                        placeholder="Japamala Lápis Lazúli"
+                        value={values.name}
+                        onChange={(value) => set('name', value)}
+                    />
+                    <AdminField
+                        error={errors.description}
+                        label="Descrição"
+                        multiline
+                        placeholder="O que essa peça carrega"
+                        value={values.description}
+                        onChange={(value) => set('description', value)}
+                    />
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <AdminField
+                            error={errors.category}
+                            label="Categoria"
+                            placeholder="Japamalas"
+                            value={values.category}
+                            onChange={(value) => set('category', value)}
+                        />
+                        <AdminField
+                            error={errors.stone}
+                            label="Pedra / material"
+                            placeholder="Lápis Lazúli"
+                            value={values.stone}
+                            onChange={(value) => set('stone', value)}
+                        />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <AdminField
+                            error={errors.price}
+                            label="Preço (R$)"
+                            placeholder="219.90"
+                            value={values.price}
+                            onChange={(value) => set('price', value)}
+                        />
+                        <AdminField
+                            error={errors.stock}
+                            label="Estoque"
+                            placeholder="8"
+                            value={values.stock}
+                            onChange={(value) => set('stock', value)}
+                        />
+                        <AdminField
+                            error={errors.reviews}
+                            label="Avaliações"
+                            placeholder="120"
+                            value={values.reviews}
+                            onChange={(value) => set('reviews', value)}
+                        />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <AdminField
+                            error={errors.badge}
+                            label="Selo (opcional)"
+                            placeholder="MAIS VENDIDA"
+                            value={values.badge}
+                            onChange={(value) => set('badge', value)}
+                        />
+                        <AdminField
+                            error={errors.slug}
+                            label="Identificador"
+                            placeholder="gerado a partir do nome"
+                            value={values.slug}
+                            onChange={(value) => set('slug', value)}
+                        />
+                    </div>
+                    <AdminField
+                        error={errors.image_path}
+                        label="Imagem principal"
+                        placeholder="/images/auraleve/product-p1.png"
+                        value={values.image_path}
+                        onChange={(value) => set('image_path', value)}
+                    />
+                    <AdminField
+                        error={errors.detail_image_path}
+                        label="Imagem de detalhe (opcional)"
+                        placeholder="/images/auraleve/detail-p1.png"
+                        value={values.detail_image_path}
+                        onChange={(value) => set('detail_image_path', value)}
+                    />
+
+                    {values.image_path && (
+                        <img
+                            src={values.image_path}
+                            alt=""
+                            className="h-40 w-full rounded-[18px] border border-[#ece3d2] object-cover"
+                        />
+                    )}
+
+                    <label className="flex cursor-pointer items-center gap-3 text-sm text-[#5c554d]">
+                        <input
+                            type="checkbox"
+                            checked={values.active}
+                            onChange={(event) =>
+                                set('active', event.target.checked)
+                            }
+                            className="h-4.5 w-4.5 accent-[#b0813c]"
+                        />
+                        Visível na loja
+                    </label>
+
+                    {errors.product && (
+                        <div className="rounded-[16px] border border-[#e6c3b8] bg-[#fff4ef] p-4 text-sm text-[#a8503a]">
+                            {errors.product}
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-7 flex flex-col gap-3 md:flex-row md:justify-end">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="h-12 rounded-full border border-[#e6dcc9] bg-[#fffdf9] px-7 text-xs tracking-[.14em] text-[#5c554d]"
+                    >
+                        CANCELAR
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="h-12 rounded-full bg-[#b0813c] px-7 text-xs tracking-[.14em] text-[#fffdf8] transition hover:bg-[#96702f] disabled:opacity-60"
+                    >
+                        {processing
+                            ? 'SALVANDO...'
+                            : product
+                              ? 'SALVAR ALTERAÇÕES'
+                              : 'ADICIONAR AO CATÁLOGO'}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+}
+
+function AdminField({
+    error,
+    label,
+    multiline = false,
+    placeholder,
+    value,
+    onChange,
+}: {
+    error?: string;
+    label: string;
+    multiline?: boolean;
+    placeholder: string;
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    const shared = cx(
+        'w-full border bg-[#fffdf9] px-5 text-[15px] outline-none transition focus:border-[#b0813c]',
+        error ? 'border-[#a8503a]' : 'border-[#e6dcc9]',
+    );
+
+    return (
+        <label className="block">
+            <span className="mb-2 block text-[11px] tracking-[.14em] text-[#8a8178] uppercase">
+                {label}
+            </span>
+            {multiline ? (
+                <textarea
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    placeholder={placeholder}
+                    rows={3}
+                    className={cx(shared, 'rounded-[18px] py-4')}
+                />
+            ) : (
+                <input
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    placeholder={placeholder}
+                    className={cx(shared, 'h-12 rounded-full')}
+                />
+            )}
+            {error && (
+                <span className="mt-1.5 block text-xs text-[#a8503a]">
+                    {error}
+                </span>
+            )}
+        </label>
     );
 }
 
