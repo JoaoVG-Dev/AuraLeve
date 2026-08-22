@@ -133,8 +133,11 @@ class OrderController extends Controller
                 'shipping_address' => [
                     'cep' => $request->digits($validated['cep']),
                     'street' => trim($validated['rua']),
+                    'number' => trim($validated['numero']),
+                    'complement' => trim((string) ($validated['complemento'] ?? '')),
                     'neighborhood' => trim((string) ($validated['bairro'] ?? '')),
                     'city' => trim($validated['cidade']),
+                    'state' => $validated['estado'],
                 ],
                 'gift_wrap' => (bool) $validated['gift_wrap'],
                 'gift_message' => $validated['gift_message'] ?? null,
@@ -191,8 +194,6 @@ class OrderController extends Controller
     protected function confirmedOrder(Order $order): array
     {
         $shipping = config("auraleve.shipping_methods.{$order->shipping_method}", []);
-        $address = $order->shipping_address ?? [];
-        $cep = (string) data_get($address, 'cep', '');
 
         return [
             'orderNumber' => $order->order_number,
@@ -205,11 +206,7 @@ class OrderController extends Controller
                 default => 'Pix',
             },
             'ship' => ($shipping['label'] ?? strtoupper($order->shipping_method)).' · '.($shipping['eta'] ?? $order->shipping_eta),
-            'address' => [
-                'line1' => (string) data_get($address, 'street', ''),
-                'line2' => (string) data_get($address, 'neighborhood', ''),
-                'line3' => trim((string) data_get($address, 'city', '').($cep !== '' ? " · {$cep}" : '')),
-            ],
+            'address' => $order->addressLines(),
         ];
     }
 }

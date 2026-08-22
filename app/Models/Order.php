@@ -76,4 +76,35 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    /**
+     * The shipping address broken into three printable lines.
+     *
+     * @return array{line1: string, line2: string, line3: string}
+     */
+    public function addressLines(): array
+    {
+        $address = $this->shipping_address ?? [];
+
+        $street = trim((string) data_get($address, 'street', ''));
+        $number = trim((string) data_get($address, 'number', ''));
+        $complement = trim((string) data_get($address, 'complement', ''));
+        $neighborhood = trim((string) data_get($address, 'neighborhood', ''));
+        $city = trim((string) data_get($address, 'city', ''));
+        $state = trim((string) data_get($address, 'state', ''));
+        $cep = trim((string) data_get($address, 'cep', ''));
+
+        if (strlen($cep) === 8) {
+            $cep = substr($cep, 0, 5).'-'.substr($cep, 5);
+        }
+
+        return [
+            'line1' => trim($street.($number !== '' ? ", {$number}" : '')),
+            'line2' => trim(implode(' · ', array_filter([$complement, $neighborhood]))),
+            'line3' => trim(implode(' · ', array_filter([
+                trim($city.($state !== '' ? " - {$state}" : '')),
+                $cep,
+            ]))),
+        ];
+    }
 }

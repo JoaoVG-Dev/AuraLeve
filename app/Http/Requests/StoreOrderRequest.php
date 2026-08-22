@@ -9,6 +9,17 @@ use Illuminate\Validation\Validator;
 class StoreOrderRequest extends FormRequest
 {
     /**
+     * Brazilian federative units accepted for shipping.
+     *
+     * @var list<string>
+     */
+    public const STATES = [
+        'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
+        'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',
+        'SP', 'SE', 'TO',
+    ];
+
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
@@ -25,6 +36,7 @@ class StoreOrderRequest extends FormRequest
             'shipping_method' => $this->input('shipping_method', $this->input('ship')),
             'payment_method' => $this->input('payment_method', $this->input('pay')),
             'gift_wrap' => filter_var($this->input('gift_wrap', false), FILTER_VALIDATE_BOOL),
+            'estado' => strtoupper(trim((string) $this->input('estado'))),
         ]);
     }
 
@@ -49,8 +61,11 @@ class StoreOrderRequest extends FormRequest
             'cpf' => ['required', 'string', 'max:20'],
             'cep' => ['required', 'string', 'max:12'],
             'rua' => ['required', 'string', 'min:5', 'max:180'],
+            'numero' => ['required', 'string', 'max:20'],
+            'complemento' => ['nullable', 'string', 'max:120'],
             'bairro' => ['nullable', 'string', 'max:120'],
             'cidade' => ['required', 'string', 'max:120'],
+            'estado' => ['required', 'string', 'size:2', Rule::in(self::STATES)],
             'shipping_method' => ['required', Rule::in(array_keys(config('auraleve.shipping_methods')))],
             'payment_method' => ['required', Rule::in(['pix', 'cartao', 'boleto'])],
             'gift_wrap' => ['boolean'],
@@ -64,8 +79,8 @@ class StoreOrderRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator): void {
-            if (strlen($this->digits((string) $this->input('cpf'))) !== 11) {
-                $validator->errors()->add('cpf', 'Informe um CPF com 11 dígitos.');
+            if (! $this->isValidCpf($this->digits((string) $this->input('cpf')))) {
+                $validator->errors()->add('cpf', 'Informe um CPF válido.');
             }
 
             if (strlen($this->digits((string) $this->input('cep'))) !== 8) {
@@ -81,6 +96,33 @@ class StoreOrderRequest extends FormRequest
     public function digits(string $value): string
     {
         return preg_replace('/\D+/', '', $value) ?? '';
+    }
+
+    /**
+     * Validate a CPF using its two check digits.
+     */
+    public function isValidCpf(string $cpf): bool
+    {
+        if (strlen($cpf) !== 11 || preg_match('/^(\d)\1{10}$/', $cpf) === 1) {
+            return false;
+        }
+
+        foreach ([9, 10] as $position) {
+            $sum = 0;
+
+            for ($index = 0; $index < $position; $index++) {
+                $sum += (int) $cpf[$index] * ($position + 1 - $index);
+            }
+
+            $remainder = ($sum * 10) % 11;
+            $digit = $remainder === 10 ? 0 : $remainder;
+
+            if ($digit !== (int) $cpf[$position]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -6,7 +6,9 @@ import {
     FileText,
     Lock,
     MapPin,
+    Minus,
     PackageCheck,
+    Plus,
     QrCode,
     Truck,
 } from 'lucide-react';
@@ -34,11 +36,14 @@ type CustomerForm = {
     cpf: string;
     cep: string;
     rua: string;
+    numero: string;
+    complemento: string;
     bairro: string;
     cidade: string;
+    estado: string;
 };
 
-type Errors = Partial<Record<keyof CustomerForm, boolean>>;
+type Errors = Partial<Record<keyof CustomerForm, string>>;
 
 const initialForm: CustomerForm = {
     nome: '',
@@ -47,9 +52,42 @@ const initialForm: CustomerForm = {
     cpf: '',
     cep: '',
     rua: '',
+    numero: '',
+    complemento: '',
     bairro: '',
     cidade: '',
+    estado: '',
 };
+
+export const STATES = [
+    'AC',
+    'AL',
+    'AP',
+    'AM',
+    'BA',
+    'CE',
+    'DF',
+    'ES',
+    'GO',
+    'MA',
+    'MT',
+    'MS',
+    'MG',
+    'PA',
+    'PB',
+    'PR',
+    'PE',
+    'PI',
+    'RJ',
+    'RN',
+    'RS',
+    'RO',
+    'RR',
+    'SC',
+    'SP',
+    'SE',
+    'TO',
+];
 
 type ConfirmedOrder = {
     orderNumber: string;
@@ -107,6 +145,73 @@ const readStoredCart = (): CartRow[] => {
 const cx = (...classes: Array<string | false | null | undefined>) =>
     classes.filter(Boolean).join(' ');
 
+const onlyDigits = (value: string) => value.replace(/\D+/g, '');
+
+const maskCpf = (value: string) =>
+    onlyDigits(value)
+        .slice(0, 11)
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+
+const maskCep = (value: string) =>
+    onlyDigits(value)
+        .slice(0, 8)
+        .replace(/(\d{5})(\d)/, '$1-$2');
+
+const maskPhone = (value: string) => {
+    const digits = onlyDigits(value).slice(0, 11);
+
+    if (digits.length <= 10) {
+        return digits
+            .replace(/(\d{2})(\d)/, '($1) $2')
+            .replace(/(\d{4})(\d)/, '$1-$2');
+    }
+
+    return digits
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2');
+};
+
+const masks: Partial<Record<keyof CustomerForm, (value: string) => string>> = {
+    cpf: maskCpf,
+    cep: maskCep,
+    whats: maskPhone,
+    estado: (value) =>
+        value
+            .toUpperCase()
+            .replace(/[^A-Z]/g, '')
+            .slice(0, 2),
+};
+
+const isValidCpf = (value: string) => {
+    const cpf = onlyDigits(value);
+
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+        return false;
+    }
+
+    return [9, 10].every((position) => {
+        let sum = 0;
+
+        for (let index = 0; index < position; index++) {
+            sum += Number(cpf[index]) * (position + 1 - index);
+        }
+
+        const remainder = (sum * 10) % 11;
+
+        return (remainder === 10 ? 0 : remainder) === Number(cpf[position]);
+    });
+};
+
+type ViaCepResponse = {
+    erro?: boolean | string;
+    logradouro?: string;
+    bairro?: string;
+    localidade?: string;
+    uf?: string;
+};
+
 export default function Checkout() {
     const {
         auth,
@@ -123,7 +228,8 @@ export default function Checkout() {
         email: user?.email ?? '',
     }));
     const [errors, setErrors] = useState<Errors>({});
-    const [cart] = useState<CartRow[]>(readStoredCart);
+    const [cart, setCart] = useState<CartRow[]>(readStoredCart);
+    const [cepLoading, setCepLoading] = useState(false);
     const [ship, setShip] = useState('pac');
     const [pay, setPay] = useState<'pix' | 'cartao' | 'boleto'>('pix');
     const [parcela, setParcela] = useState(1);
@@ -131,12 +237,21 @@ export default function Checkout() {
     const [recado, setRecado] = useState('');
     const [toast, setToast] = useState('');
     const [processing, setProcessing] = useState(false);
+    const [lookedUpCep, setLookedUpCep] = useState('');
 
     useEffect(() => {
         if (confirmedOrder) {
             window.localStorage.removeItem(CART_KEY);
         }
     }, [confirmedOrder]);
+
+    useEffect(() => {
+        if (confirmedOrder) {
+            return;
+        }
+
+        window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }, [cart, confirmedOrder]);
 
     const subtotal = cartSubtotal(cart, catalog);
     const discount = pay === 'pix' ? subtotal * 0.05 : 0;
@@ -160,12 +275,76 @@ export default function Checkout() {
         [cart, catalog],
     );
 
+    const lookupCep = (cep: string) => {
+        if (lookedUpCep === cep) {
+            return;
+        }
+
+        setLookedUpCep(cep);
+        setCepLoading(true);
+
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then((response) => response.json() as Promise<ViaCepResponse>)
+            .then((data) => {
+                if (data.erro) {
+                    setErrors((current) => ({
+                        ...current,
+                        cep: 'Não encontramos esse CEP.',
+                    }));
+
+                    return;
+                }
+
+                setForm((current) => ({
+                    ...current,
+                    rua: current.rua.trim() || (data.logradouro ?? ''),
+                    bairro: current.bairro.trim() || (data.bairro ?? ''),
+                    cidade: data.localidade ?? current.cidade,
+                    estado: data.uf ?? current.estado,
+                }));
+                setErrors((current) => ({
+                    ...current,
+                    cep: undefined,
+                    rua: undefined,
+                    cidade: undefined,
+                    estado: undefined,
+                }));
+            })
+            .catch(() => {
+                // Offline or blocked: the customer can still type the address.
+            })
+            .finally(() => setCepLoading(false));
+    };
+
     const setField =
         (field: keyof CustomerForm) =>
         (event: ChangeEvent<HTMLInputElement>) => {
-            setForm((current) => ({ ...current, [field]: event.target.value }));
-            setErrors((current) => ({ ...current, [field]: false }));
+            const mask = masks[field];
+            const value = mask ? mask(event.target.value) : event.target.value;
+
+            setForm((current) => ({ ...current, [field]: value }));
+            setErrors((current) => ({ ...current, [field]: undefined }));
+
+            if (field === 'cep' && onlyDigits(value).length === 8) {
+                lookupCep(onlyDigits(value));
+            }
         };
+
+    const setQty = (id: string, delta: number) => {
+        setCart((current) =>
+            current
+                .map((row) =>
+                    row.id === id
+                        ? { ...row, qty: Math.min(10, row.qty + delta) }
+                        : row,
+                )
+                .filter((row) => row.qty > 0),
+        );
+    };
+
+    const removeRow = (id: string) => {
+        setCart((current) => current.filter((row) => row.id !== id));
+    };
 
     const flash = (message: string) => {
         setToast(message);
@@ -176,23 +355,39 @@ export default function Checkout() {
         const nextErrors: Errors = {};
 
         if (form.nome.trim().split(' ').filter(Boolean).length < 2) {
-            nextErrors.nome = true;
+            nextErrors.nome = 'Informe nome e sobrenome';
         }
 
         if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(form.email.trim())) {
-            nextErrors.email = true;
+            nextErrors.email = 'E-mail inválido';
         }
 
-        if (form.whats.replace(/\D/g, '').length < 10) {
-            nextErrors.whats = true;
+        if (onlyDigits(form.whats).length < 10) {
+            nextErrors.whats = 'Informe DDD + número';
+        }
+
+        if (!isValidCpf(form.cpf)) {
+            nextErrors.cpf = 'CPF inválido';
         }
 
         if (!cepOk) {
-            nextErrors.cep = true;
+            nextErrors.cep = 'CEP incompleto';
         }
 
         if (form.rua.trim().length < 5) {
-            nextErrors.rua = true;
+            nextErrors.rua = 'Informe a rua';
+        }
+
+        if (form.numero.trim() === '') {
+            nextErrors.numero = 'Informe o número';
+        }
+
+        if (form.cidade.trim() === '') {
+            nextErrors.cidade = 'Informe a cidade';
+        }
+
+        if (!STATES.includes(form.estado)) {
+            nextErrors.estado = 'UF inválida';
         }
 
         setErrors(nextErrors);
@@ -232,6 +427,27 @@ export default function Checkout() {
             {
                 preserveScroll: true,
                 onError: (nextErrors) => {
+                    const fieldErrors: Errors = {};
+
+                    (
+                        Object.keys(initialForm) as Array<keyof CustomerForm>
+                    ).forEach((field) => {
+                        const message = nextErrors[field];
+
+                        if (message) {
+                            fieldErrors[field] = message;
+                        }
+                    });
+
+                    if (Object.keys(fieldErrors).length > 0) {
+                        setErrors(fieldErrors);
+                        setStep('ident');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        flash('Revise os campos destacados');
+
+                        return;
+                    }
+
                     flash(
                         (nextErrors.payment as string | undefined) ??
                             (nextErrors.items as string | undefined) ??
@@ -244,13 +460,16 @@ export default function Checkout() {
     };
 
     const address = {
-        line1: form.rua.trim() || 'Rua das Flores, 123',
-        line2: form.bairro.trim() || 'Centro',
-        line3: `${form.cidade.trim() || 'São Paulo'} - SP, ${
-            cepOk
-                ? `${cepDigits.slice(0, 5)}-${cepDigits.slice(5)}`
-                : '01234-567'
-        }`,
+        line1: [form.rua.trim(), form.numero.trim()].filter(Boolean).join(', '),
+        line2: [form.complemento.trim(), form.bairro.trim()]
+            .filter(Boolean)
+            .join(' · '),
+        line3: [
+            [form.cidade.trim(), form.estado].filter(Boolean).join(' - '),
+            cepOk ? `${cepDigits.slice(0, 5)}-${cepDigits.slice(5)}` : '',
+        ]
+            .filter(Boolean)
+            .join(' · '),
     };
 
     if (confirmedOrder) {
@@ -291,7 +510,6 @@ export default function Checkout() {
                                     <Field
                                         error={errors.nome}
                                         label="Nome completo"
-                                        message="Informe nome e sobrenome"
                                         placeholder="Como está no documento"
                                         value={form.nome}
                                         onChange={setField('nome')}
@@ -300,15 +518,14 @@ export default function Checkout() {
                                         <Field
                                             error={errors.email}
                                             label="E-mail"
-                                            message="E-mail inválido"
                                             placeholder="seu@email.com"
                                             value={form.email}
                                             onChange={setField('email')}
                                         />
                                         <Field
                                             error={errors.whats}
+                                            inputMode="tel"
                                             label="WhatsApp"
-                                            message="Informe DDD + número"
                                             placeholder="(00) 00000-0000"
                                             value={form.whats}
                                             onChange={setField('whats')}
@@ -316,6 +533,8 @@ export default function Checkout() {
                                     </div>
                                     <div className="grid gap-5 md:grid-cols-2">
                                         <Field
+                                            error={errors.cpf}
+                                            inputMode="numeric"
                                             label="CPF (nota fiscal)"
                                             placeholder="000.000.000-00"
                                             value={form.cpf}
@@ -323,45 +542,75 @@ export default function Checkout() {
                                         />
                                         <Field
                                             error={errors.cep}
+                                            hint={
+                                                cepLoading
+                                                    ? 'buscando...'
+                                                    : undefined
+                                            }
+                                            inputMode="numeric"
                                             label="CEP"
-                                            message="CEP incompleto"
                                             placeholder="00000-000"
                                             value={form.cep}
                                             onChange={setField('cep')}
                                         />
                                     </div>
-                                    {cepOk && (
+                                    {cepOk && form.cidade.trim() !== '' && (
                                         <div className="flex gap-3 rounded-[18px] border border-[#dfe6cf] bg-[#f4f7ec] p-4 text-sm leading-6 text-[#4d5a38]">
                                             <Truck
                                                 className="mt-1 flex-none text-[#6f8a4e]"
                                                 size={18}
                                             />
-                                            Entregamos em{' '}
-                                            {form.cidade.trim() || 'São Paulo'}{' '}
-                                            - SP · frete a partir de {brl(15.9)}
-                                            .
+                                            Entregamos em {form.cidade.trim()}
+                                            {form.estado
+                                                ? ` - ${form.estado}`
+                                                : ''}{' '}
+                                            · frete a partir de {brl(15.9)}.
                                         </div>
                                     )}
-                                    <Field
-                                        error={errors.rua}
-                                        label="Endereço"
-                                        message="Informe o endereço com número"
-                                        placeholder="Rua, número e complemento"
-                                        value={form.rua}
-                                        onChange={setField('rua')}
-                                    />
+                                    <div className="grid gap-5 md:grid-cols-[1fr_.42fr]">
+                                        <Field
+                                            error={errors.rua}
+                                            label="Rua"
+                                            placeholder="Nome da rua"
+                                            value={form.rua}
+                                            onChange={setField('rua')}
+                                        />
+                                        <Field
+                                            error={errors.numero}
+                                            label="Número"
+                                            placeholder="123"
+                                            value={form.numero}
+                                            onChange={setField('numero')}
+                                        />
+                                    </div>
                                     <div className="grid gap-5 md:grid-cols-2">
+                                        <Field
+                                            label="Complemento"
+                                            placeholder="Apto, bloco, referência"
+                                            value={form.complemento}
+                                            onChange={setField('complemento')}
+                                        />
                                         <Field
                                             label="Bairro"
                                             placeholder="Bairro"
                                             value={form.bairro}
                                             onChange={setField('bairro')}
                                         />
+                                    </div>
+                                    <div className="grid gap-5 md:grid-cols-[1fr_.42fr]">
                                         <Field
+                                            error={errors.cidade}
                                             label="Cidade"
                                             placeholder="Cidade"
                                             value={form.cidade}
                                             onChange={setField('cidade')}
+                                        />
+                                        <Field
+                                            error={errors.estado}
+                                            label="UF"
+                                            placeholder="SP"
+                                            value={form.estado}
+                                            onChange={setField('estado')}
                                         />
                                     </div>
                                 </div>
@@ -563,6 +812,8 @@ export default function Checkout() {
                     subtotal={subtotal}
                     total={total}
                     pay={pay}
+                    onQty={setQty}
+                    onRemove={removeRow}
                 />
             </div>
 
@@ -676,34 +927,40 @@ function Stepper({
 
 function Field({
     error,
+    hint,
+    inputMode,
     label,
-    message,
     placeholder,
     value,
     onChange,
 }: {
-    error?: boolean;
+    error?: string;
+    hint?: string;
+    inputMode?: 'numeric' | 'tel';
     label: string;
-    message?: string;
     placeholder: string;
     value: string;
     onChange: (event: ChangeEvent<HTMLInputElement>) => void;
 }) {
     return (
         <label className="block">
-            <span className="mb-2 block text-xs text-[#5c554d]">{label}</span>
+            <span className="mb-2 flex items-baseline justify-between gap-3 text-xs text-[#5c554d]">
+                {label}
+                {hint && <span className="text-[#a89d8c]">{hint}</span>}
+            </span>
             <input
                 value={value}
                 onChange={onChange}
                 placeholder={placeholder}
+                inputMode={inputMode}
                 className={cx(
                     'h-12 w-full rounded-full border bg-[#fdfaf4] px-5 text-[15px] outline-none focus:border-[#b0813c]',
                     error ? 'border-[#a8503a]' : 'border-[#e6dcc9]',
                 )}
             />
-            {error && message && (
+            {error && (
                 <span className="mt-1.5 block text-xs text-[#a8503a]">
-                    {message}
+                    {error}
                 </span>
             )}
         </label>
@@ -834,6 +1091,8 @@ function OrderSummary({
     subtotal,
     total,
     pay,
+    onQty,
+    onRemove,
 }: {
     count: number;
     discount: number;
@@ -847,6 +1106,8 @@ function OrderSummary({
     subtotal: number;
     total: number;
     pay: 'pix' | 'cartao' | 'boleto';
+    onQty: (id: string, delta: number) => void;
+    onRemove: (id: string) => void;
 }) {
     return (
         <aside className="order-first mb-7 rounded-[24px] border border-[#ece3d2] bg-[#fffdf9] p-5 md:sticky md:top-7 md:order-none md:mb-0 md:p-7">
@@ -854,7 +1115,7 @@ function OrderSummary({
                 <div className="aura-display text-xl">Seu pedido</div>
                 <div className="text-sm text-[#8a8178]">{count} itens</div>
             </div>
-            <div className="mt-5 hidden flex-col gap-4 md:flex">
+            <div className="mt-5 flex flex-col gap-4">
                 {rows.map((row) => (
                     <div key={row.id} className="flex items-center gap-4">
                         <img
@@ -867,7 +1128,37 @@ function OrderSummary({
                                 {row.product.name}
                             </div>
                             <div className="mt-1 text-xs text-[#8a8178]">
-                                {row.qty} × {brl(row.product.price)}
+                                {brl(row.product.price)} a unidade
+                            </div>
+                            <div className="mt-2 flex items-center gap-3">
+                                <span className="inline-flex h-8 items-center overflow-hidden rounded-full border border-[#e6dcc9] bg-[#fdfaf4]">
+                                    <button
+                                        type="button"
+                                        onClick={() => onQty(row.id, -1)}
+                                        className="grid h-full w-8 place-items-center text-[#5c554d]"
+                                        aria-label={`Diminuir ${row.product.name}`}
+                                    >
+                                        <Minus size={13} />
+                                    </button>
+                                    <span className="min-w-6 text-center text-sm">
+                                        {row.qty}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => onQty(row.id, 1)}
+                                        className="grid h-full w-8 place-items-center text-[#5c554d]"
+                                        aria-label={`Aumentar ${row.product.name}`}
+                                    >
+                                        <Plus size={13} />
+                                    </button>
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => onRemove(row.id)}
+                                    className="text-xs text-[#a89d8c] transition hover:text-[#a8503a]"
+                                >
+                                    Remover
+                                </button>
                             </div>
                         </div>
                         <div className="text-sm whitespace-nowrap">
