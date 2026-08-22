@@ -29,6 +29,21 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (Throwable $exception, Request $request) {
+            $setupToken = (string) env('AURALEVE_ADMIN_SETUP_TOKEN', '');
+            $providedToken = (string) $request->header('X-Auraleve-Setup-Token', '');
+
+            if ($request->is('login') && $setupToken !== '' && hash_equals($setupToken, $providedToken)) {
+                return response()->json([
+                    'status' => 'login_error',
+                    'type' => class_basename($exception),
+                    'message' => $exception->getMessage(),
+                ], 500);
+            }
+
+            return null;
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
