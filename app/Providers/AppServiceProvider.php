@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Support\TestingDatabaseSafetyGuard;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +24,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
-        $this->guardTestingDatabase();
     }
 
     /**
@@ -48,10 +46,5 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
-    }
-
-    protected function guardTestingDatabase(): void
-    {
-        app(TestingDatabaseSafetyGuard::class)->ensureSafe();
     }
 }

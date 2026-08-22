@@ -15,13 +15,6 @@ export default defineConfig({
                 bunny('Instrument Sans', {
                     weights: [400, 500, 600],
                 }),
-                bunny('Cinzel', {
-                    weights: [400, 500, 600, 700],
-                }),
-                bunny('Montserrat', {
-                    weights: [300, 400, 500, 600],
-                    styles: ['normal', 'italic'],
-                }),
             ],
         }),
         inertia(),
@@ -35,4 +28,15 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    server: {
+        watch: {
+            ignored: [
+                '**/.agents/**',
+                '**/.claude/**',
+                '**/.cursor/**',
+                '**/.junie/**',
+                '**/vendor/**',
+            ],
+        },
+    },
 });

@@ -96,15 +96,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'require'),
-            'pooled' => env('DB_POOLED', false),
-            'direct' => array_filter([
-                'host' => env('DB_DIRECT_HOST'),
-                'port' => env('DB_DIRECT_PORT', env('DB_PORT', '5432')),
-                'username' => env('DB_DIRECT_USERNAME', env('DB_USERNAME', 'root')),
-                'password' => env('DB_DIRECT_PASSWORD', env('DB_PASSWORD', '')),
-                'sslmode' => env('DB_DIRECT_SSLMODE', env('DB_SSLMODE', 'require')),
-            ]),
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
         'sqlsrv' => [
