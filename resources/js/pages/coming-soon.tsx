@@ -1,27 +1,18 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 
-import {
-    InstagramIcon,
-    MailIcon,
-    WhatsappIcon,
-} from '@/components/auraleve-icons';
 import { brand } from '@/data/auraleve';
 
-const links = [
-    { label: 'Entrar', href: '/login' },
-    { label: 'Prévia da loja', href: '/loja-preview' },
-    {
-        label: 'Instagram',
-        href: 'https://www.instagram.com/auraleve.acessorios',
-    },
-] as const;
+const heroImage = '/images/auraleve/official/official-soft-blue-japamala.jpeg';
 
 export default function ComingSoon() {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
 
-    const subscribe = () => {
+    const subscribe = (event: FormEvent) => {
+        event.preventDefault();
+
         if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email.trim())) {
             setMessage('Confira o e-mail informado.');
 
@@ -29,7 +20,7 @@ export default function ComingSoon() {
         }
 
         setEmail('');
-        setMessage('Cadastro recebido.');
+        setMessage('E-mail recebido. Avisaremos você.');
     };
 
     return (
@@ -37,117 +28,94 @@ export default function ComingSoon() {
             <Head title="Em construção">
                 <meta
                     name="description"
-                    content="A AuraLeve está preparando uma experiência especial para você."
+                    content="A loja AuraLeve está sendo montada à mão."
                 />
             </Head>
 
-            <main className="aura-body relative min-h-screen overflow-hidden bg-[#e8e0d2] text-[#26221e]">
+            <main className="aura-body relative min-h-screen overflow-hidden bg-[#1a130f] text-[#f8efe3]">
                 <img
-                    src={brand.homeHero}
+                    src={heroImage}
                     alt=""
-                    className="absolute inset-0 h-full w-full object-cover object-[58%_42%]"
+                    className="absolute inset-0 h-full w-full object-cover object-[54%_45%]"
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,250,244,.88),rgba(253,250,244,.52)_44%,rgba(38,34,30,.22)),linear-gradient(90deg,rgba(253,250,244,.74),rgba(253,250,244,.18)_48%,rgba(253,250,244,.56))]" />
+                <div className="absolute inset-0 bg-[rgba(22,15,11,.68)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,244,220,.12),rgba(22,15,11,.42)_56%,rgba(22,15,11,.74))]" />
 
-                <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-6 py-10 text-center sm:px-10">
+                <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl flex-col items-center justify-center px-8 py-9 text-center sm:px-12 lg:px-16">
                     <div className="flex flex-col items-center">
                         <img
                             src={brand.symbol}
                             alt=""
-                            className="h-14 w-auto object-contain drop-shadow-[0_8px_22px_rgba(38,34,30,.12)] md:h-[72px]"
+                            className="h-[112px] w-auto object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,.45)] sm:h-[132px] lg:h-[150px]"
                         />
-                        <div className="aura-display mt-5 text-[22px] leading-none tracking-[.26em] md:text-[31px]">
+                        <div className="aura-display mt-6 text-[28px] leading-none tracking-[.34em] text-[#e6b653] sm:text-[36px] lg:text-[42px]">
                             AURALEVE
                         </div>
-                        <div className="mt-2 text-[8px] tracking-[.28em] text-[#4f463d] uppercase md:text-[10px]">
+                        <div className="mt-5 text-[10px] tracking-[.38em] text-[#f1e4d1] uppercase sm:text-[12px]">
                             Acessórios Autorais
                         </div>
+                        <div className="mt-7 h-px w-16 bg-[#c18a39]" />
                     </div>
 
-                    <h1 className="aura-display mt-12 text-[40px] leading-[1.05] tracking-normal text-[#26221e] uppercase sm:text-[52px] md:mt-14 md:text-[70px]">
-                        Em construção
+                    <h1 className="aura-display mt-9 max-w-[780px] text-[31px] leading-[1.18] text-[#fff6e8] sm:text-[42px] lg:text-[52px]">
+                        Nossa loja está sendo montada à mão
                     </h1>
-                    <div className="mt-6 h-px w-12 bg-[#a97b34]" />
 
-                    <p className="mt-6 max-w-[360px] text-[15px] leading-7 text-[#3b332b] md:max-w-[460px] md:text-[17px] md:leading-8">
-                        Estamos preparando algo especial para você.
-                    </p>
-                    <p className="mt-4 max-w-[430px] text-sm leading-7 text-[#5c554d] md:text-[15px]">
-                        Em breve, você poderá explorar nossa coleção de
-                        acessórios autorais feitos com pedras naturais, madeira
-                        e intenções que conectam.
+                    <p className="mt-7 max-w-[560px] text-[15px] leading-8 text-[#eadfce] sm:text-base sm:leading-8">
+                        Do mesmo jeito que fazemos cada peça: com calma e
+                        atenção ao detalhe. Deixe seu e-mail e você é a
+                        primeira a saber quando abrirmos.
                     </p>
 
-                    <div className="mt-10 w-full max-w-[520px]">
-                        <div className="mb-4 flex items-center justify-center gap-3 text-[11px] tracking-[.16em] text-[#6f675d] uppercase">
-                            <MailIcon size={19} className="text-[#9d6634]" />
-                            Receba as novidades
-                        </div>
-                        <div className="flex flex-col border border-[#cdbda8] bg-[#fffdf9]/88 shadow-[0_18px_60px_rgba(59,43,31,.12)] backdrop-blur-sm sm:flex-row">
-                            <input
-                                value={email}
-                                onChange={(event) => {
-                                    setEmail(event.target.value);
-                                    setMessage('');
-                                }}
-                                type="email"
-                                inputMode="email"
-                                placeholder="Seu e-mail"
-                                className="h-12 min-w-0 flex-1 bg-transparent px-4 text-sm outline-none placeholder:text-[#8a8178] sm:h-14 sm:px-5"
-                            />
-                            <button
-                                type="button"
-                                onClick={subscribe}
-                                className="h-12 bg-[#3b2b1f] px-8 text-sm text-[#fff9ef] transition hover:bg-[#2d2018] sm:h-14"
-                            >
-                                Enviar
-                            </button>
-                        </div>
-                        {message && (
-                            <div className="mt-3 text-sm text-[#7b5b31]">
-                                {message}
-                            </div>
-                        )}
-                    </div>
+                    <form
+                        onSubmit={subscribe}
+                        className="mt-9 flex w-full max-w-[640px] flex-col gap-4 lg:flex-row lg:items-center lg:gap-3"
+                    >
+                        <input
+                            value={email}
+                            onChange={(event) => {
+                                setEmail(event.target.value);
+                                setMessage('');
+                            }}
+                            type="email"
+                            inputMode="email"
+                            aria-label="E-mail"
+                            placeholder="seu@email.com"
+                            className="h-11 min-w-0 flex-1 rounded-full border border-[rgba(255,246,232,.38)] bg-[rgba(255,255,255,.08)] px-6 text-sm text-[#fff6e8] outline-none backdrop-blur-sm placeholder:text-[rgba(255,246,232,.58)] focus:border-[#e6b653] lg:h-[54px]"
+                        />
+                        <button
+                            type="submit"
+                            className="h-[54px] rounded-full bg-[#c18a39] px-11 text-xs tracking-[.16em] text-[#fff8ec] uppercase transition hover:bg-[#d49a40]"
+                        >
+                            Avise-me
+                        </button>
+                    </form>
 
-                    <nav className="mt-10 flex flex-col items-center gap-4 text-xs tracking-[.16em] text-[#4f463d] uppercase sm:flex-row sm:gap-8">
-                        {links.map((link) =>
-                            link.href.startsWith('/') ? (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className="border-b border-[#c9b48c] pb-1 transition hover:text-[#a97b34]"
-                                >
-                                    {link.label}
-                                </Link>
-                            ) : (
-                                <a
-                                    key={link.href}
-                                    href={link.href}
-                                    className="border-b border-[#c9b48c] pb-1 transition hover:text-[#a97b34]"
-                                >
-                                    {link.label}
-                                </a>
-                            ),
-                        )}
-                    </nav>
+                    {message && (
+                        <div className="mt-4 text-sm text-[#e6b653]">
+                            {message}
+                        </div>
+                    )}
 
-                    <div className="mt-11 flex items-center gap-5 text-[#3b342d]">
+                    <nav className="mt-12 flex flex-col items-center gap-5 text-[11px] tracking-[.18em] uppercase sm:flex-row sm:gap-7">
                         <a
                             href="https://www.instagram.com/auraleve.acessorios"
-                            aria-label="Instagram AuraLeve"
-                            className="transition hover:text-[#a97b34]"
+                            className="border-b border-[#c18a39] pb-1 text-[#e6b653] transition hover:text-[#fff6e8]"
                         >
-                            <InstagramIcon size={20} />
+                            Instagram
                         </a>
+                        <span className="hidden h-4 w-px bg-[rgba(255,246,232,.24)] sm:block" />
                         <a
                             href="https://wa.me/5511999999999"
-                            aria-label="WhatsApp AuraLeve"
-                            className="transition hover:text-[#a97b34]"
+                            className="text-[#f1e4d1] transition hover:text-[#e6b653]"
                         >
-                            <WhatsappIcon size={20} />
+                            WhatsApp
                         </a>
-                    </div>
+                    </nav>
+
+                    <footer className="mt-12 text-[10px] tracking-[.34em] text-[rgba(255,246,232,.58)] uppercase">
+                        Feito à mão em São Paulo · @auraleve
+                    </footer>
                 </section>
             </main>
         </>
