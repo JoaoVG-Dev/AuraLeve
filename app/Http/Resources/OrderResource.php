@@ -32,6 +32,28 @@ class OrderResource extends JsonResource
                 'qty' => $item->quantity,
                 'total' => (float) $item->total,
             ])->values()),
+            'placedAt' => $this->created_at?->format('d/m/Y H:i') ?? '',
+            'email' => $this->customer_email,
+            'phone' => $this->customer_phone,
+            'cpf' => $this->customer_cpf,
+            'address' => $this->addressLines(),
+            'subtotal' => (float) $this->subtotal,
+            'discount' => (float) $this->discount,
+            'shippingAmount' => (float) $this->shipping_amount,
+            'shipping' => implode(' · ', array_filter([
+                (string) config(
+                    "auraleve.shipping_methods.{$this->shipping_method}.label",
+                    strtoupper((string) $this->shipping_method)
+                ),
+                $this->shipping_eta,
+            ])),
+            'payment' => match ($this->payment_method) {
+                'cartao' => 'Cartão de crédito',
+                'boleto' => 'Boleto bancário',
+                default => 'Pix',
+            },
+            'giftWrap' => (bool) $this->gift_wrap,
+            'giftMessage' => $this->gift_message,
         ];
     }
 

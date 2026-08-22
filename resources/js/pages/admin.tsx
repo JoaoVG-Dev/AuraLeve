@@ -3,17 +3,24 @@ import {
     BarChart3,
     Box,
     ClipboardList,
+    CreditCard,
+    Download,
     ExternalLink,
+    Gift,
     Hammer,
+    Mail,
+    MapPin,
     Minus,
     PackagePlus,
     Pencil,
+    Phone,
     Plus,
+    Truck,
     Trash2,
     X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 
 import {
     brand,
@@ -25,6 +32,12 @@ import type { Product } from '@/data/auraleve';
 
 type AdminView = 'visao' | 'pedidos' | 'produtos' | 'atelie';
 
+type OrderItem = {
+    name: string;
+    qty: number;
+    total: number;
+};
+
 type Order = {
     id: number;
     number?: string;
@@ -34,6 +47,19 @@ type Order = {
     st: number;
     status?: string;
     paymentStatus?: string;
+    items?: OrderItem[];
+    placedAt?: string;
+    email?: string;
+    phone?: string;
+    cpf?: string;
+    address?: { line1: string; line2: string; line3: string };
+    subtotal?: number;
+    discount?: number;
+    shippingAmount?: number;
+    shipping?: string;
+    payment?: string;
+    giftWrap?: boolean;
+    giftMessage?: string | null;
 };
 
 type DashboardStats = {
@@ -51,6 +77,31 @@ type AdminProps = {
 
 const cx = (...classes: Array<string | false | null | undefined>) =>
     classes.filter(Boolean).join(' ');
+
+const csvCell = (value: unknown) =>
+    `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+const orderStatusLabel = (order: Order) =>
+    statusOptions[order.st]?.label ?? order.status ?? 'Em preparação';
+
+const orderAddress = (order: Order) =>
+    [order.address?.line1, order.address?.line2, order.address?.line3]
+        .filter(Boolean)
+        .join(' | ');
+
+const downloadCsv = (filename: string, rows: unknown[][]) => {
+    const csv = rows.map((row) => row.map(csvCell).join(';')).join('\r\n');
+    const blob = new Blob([`\ufeff${csv}`], {
+        type: 'text/csv;charset=utf-8;',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+};
 
 const initialOrders: Order[] = [
     {
@@ -104,6 +155,7 @@ export default function Admin({
     const [toast, setToast] = useState('');
     const [editing, setEditing] = useState<Product | null>(null);
     const [creating, setCreating] = useState(false);
+    const [detail, setDetail] = useState<Order | null>(null);
 
     useEffect(() => {
         if (!toast) {
@@ -157,6 +209,9 @@ export default function Admin({
         (order) =>
             filter === 'Todos' || statusOptions[order.st].label === filter,
     );
+    const selectedOrder = detail
+        ? (orders.find((order) => order.id === detail.id) ?? detail)
+        : null;
 
     const nav = [
         { id: 'visao', label: 'Visão geral', short: 'Visão', icon: BarChart3 },
@@ -230,8 +285,63 @@ export default function Admin({
         });
     };
 
+    const exportOrders = () => {
+        if (!visibleOrders.length) {
+            setToast('Nenhum pedido para exportar');
+
+            return;
+        }
+
+        downloadCsv('auraleve-pedidos.csv', [
+            [
+                'Pedido',
+                'Cliente',
+                'Data',
+                'Status',
+                'Pagamento',
+                'Entrega',
+                'Subtotal',
+                'Desconto',
+                'Frete',
+                'Total',
+                'E-mail',
+                'Telefone',
+                'CPF',
+                'Endereço',
+                'Presente',
+                'Mensagem',
+            ],
+            ...visibleOrders.map((order) => [
+                order.number ?? order.id,
+                order.cliente,
+                order.placedAt ?? order.data,
+                orderStatusLabel(order),
+                order.payment ?? order.paymentStatus ?? '',
+                order.shipping ?? '',
+                order.subtotal ?? '',
+                order.discount ?? '',
+                order.shippingAmount ?? '',
+                order.total,
+                order.email ?? '',
+                order.phone ?? '',
+                order.cpf ?? '',
+                orderAddress(order),
+                order.giftWrap ? 'Sim' : 'Não',
+                order.giftMessage ?? '',
+            ]),
+        ]);
+
+        setToast('CSV de pedidos exportado');
+    };
+
     const headerAction = () => {
-        if (view === 'pedidos' || view === 'atelie') {
+        if (view === 'pedidos') {
+            exportOrders();
+
+            return;
+        }
+
+        if (view === 'atelie') {
             setToast(`${meta.action.toLowerCase()} — a definir`);
 
             return;
@@ -305,7 +415,11 @@ export default function Admin({
                                     onClick={headerAction}
                                     className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#b0813c] px-6 text-xs tracking-[.14em] text-[#fffdf8] transition hover:bg-[#96702f]"
                                 >
-                                    <PackagePlus size={15} />
+                                    {view === 'pedidos' ? (
+                                        <Download size={15} />
+                                    ) : (
+                                        <PackagePlus size={15} />
+                                    )}
                                     {meta.action}
                                 </button>
                             </div>
@@ -319,6 +433,7 @@ export default function Admin({
                                     orders={visibleOrders}
                                     onAdvance={advanceOrder}
                                     onFilter={setFilter}
+                                    onOpen={setDetail}
                                 />
                             )}
                             {view === 'produtos' && (
@@ -384,6 +499,16 @@ export default function Admin({
                             setEditing(null);
                             setToast(message);
                         }}
+                    />
+                )}
+
+                {selectedOrder && (
+                    <OrderDetail
+                        order={selectedOrder}
+                        onAdvance={() =>
+                            advanceOrder(selectedOrder.id, selectedOrder.st)
+                        }
+                        onClose={() => setDetail(null)}
                     />
                 )}
 
@@ -591,11 +716,13 @@ function Orders({
     orders,
     onAdvance,
     onFilter,
+    onOpen,
 }: {
     filter: string;
     orders: Order[];
     onAdvance: (id: number, currentStatus: number) => void;
     onFilter: (filter: string) => void;
+    onOpen: (order: Order) => void;
 }) {
     return (
         <div className="animate-in duration-300 fade-in">
@@ -636,12 +763,20 @@ function Orders({
                             className="border-b border-[#f5efe3]"
                         >
                             <div className="hidden grid-cols-[1fr_1.6fr_1fr_.9fr_1.1fr] items-center gap-4 px-6 py-5 text-sm md:grid">
-                                <span className="text-[#a97b34]">
+                                <button
+                                    type="button"
+                                    onClick={() => onOpen(order)}
+                                    className="justify-self-start text-[#a97b34] transition hover:underline"
+                                >
                                     #{order.number ?? order.id}
-                                </span>
-                                <span className="truncate">
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onOpen(order)}
+                                    className="truncate text-left transition hover:text-[#a97b34]"
+                                >
                                     {order.cliente}
-                                </span>
+                                </button>
                                 <span className="text-[#8a8178]">
                                     {order.data}
                                 </span>
@@ -657,14 +792,22 @@ function Orders({
                             </div>
                             <div className="flex flex-col gap-2 p-5 md:hidden">
                                 <div className="flex items-baseline justify-between gap-3">
-                                    <span className="text-sm text-[#a97b34]">
+                                    <button
+                                        type="button"
+                                        onClick={() => onOpen(order)}
+                                        className="text-sm text-[#a97b34] underline"
+                                    >
                                         #{order.number ?? order.id}
-                                    </span>
+                                    </button>
                                     <span>{brl(order.total)}</span>
                                 </div>
-                                <div className="text-[15px]">
+                                <button
+                                    type="button"
+                                    onClick={() => onOpen(order)}
+                                    className="text-left text-[15px]"
+                                >
                                     {order.cliente}
-                                </div>
+                                </button>
                                 <div className="flex items-center justify-between gap-3">
                                     <span className="text-xs text-[#8a8178]">
                                         {order.data}
@@ -687,6 +830,200 @@ function Orders({
                 Toque no número ou no nome para ver o pedido completo; toque no
                 status para avançá-lo: em preparação, enviado, entregue.
             </div>
+        </div>
+    );
+}
+
+function OrderDetail({
+    order,
+    onAdvance,
+    onClose,
+}: {
+    order: Order;
+    onAdvance: () => void;
+    onClose: () => void;
+}) {
+    const status = statusOptions[order.st] ?? statusOptions[0];
+    const items = order.items ?? [];
+    const canAdvance = order.st < statusOptions.length - 1;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(30,22,12,.42)] p-0 backdrop-blur-sm md:items-center md:p-6">
+            <section className="aura-hide-scrollbar max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-t-[26px] bg-[#fdfaf4] p-6 md:rounded-[26px] md:p-8">
+                <div className="flex items-start justify-between gap-6">
+                    <div>
+                        <div className="text-[11px] tracking-[.2em] text-[#a97b34]">
+                            DETALHE DO PEDIDO
+                        </div>
+                        <h2 className="aura-display mt-3 text-2xl">
+                            #{order.number ?? order.id}
+                        </h2>
+                        <div className="mt-2 text-sm text-[#6f675d]">
+                            {order.cliente} · {order.placedAt ?? order.data}
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Fechar"
+                        className="grid h-10 w-10 flex-none place-items-center rounded-full border border-[#e6dcc9] bg-[#fffdf9] text-[#5c554d]"
+                    >
+                        <X size={17} />
+                    </button>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                    <DetailBlock
+                        icon={<Mail size={17} />}
+                        title="Contato"
+                        rows={[
+                            ['E-mail', order.email ?? 'Não informado'],
+                            ['Telefone', order.phone ?? 'Não informado'],
+                            ['CPF', order.cpf ?? 'Não informado'],
+                        ]}
+                    />
+                    <DetailBlock
+                        icon={<Truck size={17} />}
+                        title="Entrega"
+                        rows={[
+                            ['Método', order.shipping ?? 'Não informado'],
+                            ['Endereço', orderAddress(order) || 'Não informado'],
+                        ]}
+                    />
+                    <DetailBlock
+                        icon={<CreditCard size={17} />}
+                        title="Pagamento"
+                        rows={[
+                            ['Forma', order.payment ?? 'Não informado'],
+                            ['Status', order.paymentStatus ?? 'Não informado'],
+                        ]}
+                    />
+                    <DetailBlock
+                        icon={<Gift size={17} />}
+                        title="Presente"
+                        rows={[
+                            ['Embalagem', order.giftWrap ? 'Sim' : 'Não'],
+                            ['Mensagem', order.giftMessage || 'Sem mensagem'],
+                        ]}
+                    />
+                </div>
+
+                <div className="mt-6 overflow-hidden rounded-[20px] border border-[#e7dcc7] bg-[#fffdf9]">
+                    <div className="flex items-center gap-2 border-b border-[#f2ebdd] px-5 py-4 text-[11px] tracking-[.12em] text-[#8a8178]">
+                        <MapPin size={15} />
+                        ITENS DO PEDIDO
+                    </div>
+                    <div className="divide-y divide-[#f5efe3]">
+                        {items.length ? (
+                            items.map((item) => (
+                                <div
+                                    key={`${item.name}-${item.qty}-${item.total}`}
+                                    className="grid grid-cols-[1fr_auto] gap-4 px-5 py-4 text-sm"
+                                >
+                                    <div>
+                                        <div>{item.name}</div>
+                                        <div className="mt-1 text-xs text-[#8a8178]">
+                                            Quantidade: {item.qty}
+                                        </div>
+                                    </div>
+                                    <div>{brl(item.total)}</div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="px-5 py-4 text-sm text-[#8a8178]">
+                                Itens não disponíveis neste pedido.
+                            </div>
+                        )}
+                    </div>
+                    <div className="space-y-2 border-t border-[#f2ebdd] px-5 py-4 text-sm">
+                        <PriceLine label="Subtotal" value={order.subtotal} />
+                        <PriceLine label="Desconto" value={order.discount} />
+                        <PriceLine
+                            label="Frete"
+                            value={order.shippingAmount}
+                        />
+                        <div className="flex items-center justify-between pt-2 text-base">
+                            <span>Total</span>
+                            <strong>{brl(order.total)}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-7 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <span
+                        className="inline-flex self-start rounded-full px-3 py-2 text-[11px] tracking-[.08em]"
+                        style={{
+                            backgroundColor: status.bg,
+                            color: status.fg,
+                        }}
+                    >
+                        {status.label.toUpperCase()}
+                    </span>
+                    <div className="flex flex-col gap-3 md:flex-row">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="h-12 rounded-full border border-[#e6dcc9] bg-[#fffdf9] px-7 text-xs tracking-[.14em] text-[#5c554d]"
+                        >
+                            FECHAR
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onAdvance}
+                            disabled={!canAdvance}
+                            className="h-12 rounded-full bg-[#b0813c] px-7 text-xs tracking-[.14em] text-[#fffdf8] transition hover:bg-[#96702f] disabled:opacity-50"
+                        >
+                            AVANÇAR STATUS
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+}
+
+function DetailBlock({
+    icon,
+    rows,
+    title,
+}: {
+    icon: ReactNode;
+    rows: Array<[string, string]>;
+    title: string;
+}) {
+    return (
+        <div className="rounded-[20px] border border-[#e7dcc7] bg-[#fffdf9] p-5">
+            <div className="mb-4 flex items-center gap-2 text-[11px] tracking-[.12em] text-[#a97b34]">
+                {icon}
+                {title.toUpperCase()}
+            </div>
+            <div className="space-y-3">
+                {rows.map(([label, value]) => (
+                    <div key={label}>
+                        <div className="text-[11px] tracking-[.12em] text-[#8a8178]">
+                            {label.toUpperCase()}
+                        </div>
+                        <div className="mt-1 text-sm leading-6 text-[#3b332b]">
+                            {value}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PriceLine({
+    label,
+    value,
+}: {
+    label: string;
+    value?: number;
+}) {
+    return (
+        <div className="flex items-center justify-between text-[#6f675d]">
+            <span>{label}</span>
+            <span>{typeof value === 'number' ? brl(value) : '—'}</span>
         </div>
     );
 }
