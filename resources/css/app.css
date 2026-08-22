@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Marcellus&family=Manrope:wght@300;400;500;600;700&display=swap');
+
 @import 'tailwindcss';
 
 @import 'tw-animate-css';
@@ -139,5 +141,56 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+@layer utilities {
+    .aura-display {
+        font-family: 'Marcellus', ui-serif, Georgia, serif;
+    }
+
+    .aura-body {
+        font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    .aura-hide-scrollbar {
+        scrollbar-width: none;
+    }
+
+    .aura-hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@keyframes aura-marquee {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes aura-bob {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(8px);
+    }
+}
+
+@keyframes aura-toast {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
     }
 }
