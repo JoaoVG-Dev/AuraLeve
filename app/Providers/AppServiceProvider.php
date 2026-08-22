@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Database\NeonPostgresConnector;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\PostgresConnection;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -17,7 +19,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        DB::extend('pgsql', function (array $config, string $name): PostgresConnection {
+            $config['name'] = $name;
+            $pdo = (new NeonPostgresConnector)->connect($config);
+
+            return new PostgresConnection(
+                $pdo,
+                $config['database'] ?? '',
+                $config['prefix'] ?? '',
+                $config,
+            );
+        });
     }
 
     /**

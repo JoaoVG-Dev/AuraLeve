@@ -3,6 +3,24 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
+$neonEndpointFromUrl = function (?string $url): ?string {
+    if (! is_string($url) || ! str_contains($url, 'neon.tech')) {
+        return null;
+    }
+
+    $parts = parse_url($url);
+
+    if ($parts === false || empty($parts['host'])) {
+        return null;
+    }
+
+    $endpoint = explode('.', $parts['host'])[0];
+
+    return is_string($endpoint) && preg_match('/^ep-[a-z0-9-]+$/', $endpoint)
+        ? $endpoint
+        : null;
+};
+
 return [
 
     /*
@@ -93,6 +111,7 @@ return [
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'charset' => env('DB_CHARSET', 'utf8'),
+            'neon_endpoint' => env('DB_NEON_ENDPOINT', $neonEndpointFromUrl(env('DB_URL'))),
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => env('DB_SCHEMA', 'public'),
