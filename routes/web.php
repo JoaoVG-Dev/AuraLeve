@@ -14,9 +14,7 @@ use Inertia\Inertia;
 
 Route::get('/', fn () => Inertia::render('coming-soon'))->name('home');
 Route::get('loja-preview', StorefrontController::class)->name('store.preview');
-Route::post('admin/bootstrap', AdminBootstrapController::class)
-    ->middleware('throttle:3,1')
-    ->name('admin.bootstrap');
+Route::post('admin/bootstrap', AdminBootstrapController::class)->name('admin.bootstrap');
 Route::post('mercado-pago/webhook', MercadoPagoWebhookController::class)->name('mercado-pago.webhook');
 
 Route::middleware('auth')->group(function () {
