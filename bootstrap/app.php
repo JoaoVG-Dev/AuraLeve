@@ -28,6 +28,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->report(function (Throwable $exception): void {
+            error_log(sprintf(
+                'AURALEVE_EXCEPTION %s: %s',
+                $exception::class,
+                substr($exception->getMessage(), 0, 1000),
+            ));
+        });
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
