@@ -36,7 +36,6 @@ class AdminUserProvisioner
                             ->letters()
                             ->numbers()
                             ->symbols()
-                            ->uncompromised()
                         : Password::min(12)->mixedCase()->numbers(),
                 ],
             ],

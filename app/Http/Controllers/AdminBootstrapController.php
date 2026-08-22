@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Support\AdminUserProvisioner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class AdminBootstrapController extends Controller
 {
@@ -24,6 +25,8 @@ class AdminBootstrapController extends Controller
 
         abort_if($setupToken === '', 404);
         abort_unless(hash_equals($setupToken, $providedToken), 404);
+
+        Artisan::call('migrate', ['--force' => true]);
 
         if (User::query()->where('is_admin', true)->exists()) {
             return response()->json([
