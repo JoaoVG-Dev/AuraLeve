@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 /**
 * @see \App\Http\Controllers\StorefrontController::__invoke
  * @see app/Http/Controllers/StorefrontController.php:15
- * @route '/'
+ * @route '/loja-preview'
  */
 const StorefrontController = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: StorefrontController.url(options),
@@ -11,13 +11,13 @@ const StorefrontController = (options?: RouteQueryOptions): RouteDefinition<'get
 
 StorefrontController.definition = {
     methods: ["get","head"],
-    url: '/',
+    url: '/loja-preview',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\StorefrontController::__invoke
  * @see app/Http/Controllers/StorefrontController.php:15
- * @route '/'
+ * @route '/loja-preview'
  */
 StorefrontController.url = (options?: RouteQueryOptions) => {
     return StorefrontController.definition.url + queryParams(options)
@@ -26,7 +26,7 @@ StorefrontController.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\StorefrontController::__invoke
  * @see app/Http/Controllers/StorefrontController.php:15
- * @route '/'
+ * @route '/loja-preview'
  */
 StorefrontController.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: StorefrontController.url(options),
@@ -35,7 +35,7 @@ StorefrontController.get = (options?: RouteQueryOptions): RouteDefinition<'get'>
 /**
 * @see \App\Http\Controllers\StorefrontController::__invoke
  * @see app/Http/Controllers/StorefrontController.php:15
- * @route '/'
+ * @route '/loja-preview'
  */
 StorefrontController.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: StorefrontController.url(options),
@@ -45,7 +45,7 @@ StorefrontController.head = (options?: RouteQueryOptions): RouteDefinition<'head
     /**
 * @see \App\Http\Controllers\StorefrontController::__invoke
  * @see app/Http/Controllers/StorefrontController.php:15
- * @route '/'
+ * @route '/loja-preview'
  */
     const StorefrontControllerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: StorefrontController.url(options),
@@ -55,7 +55,7 @@ StorefrontController.head = (options?: RouteQueryOptions): RouteDefinition<'head
             /**
 * @see \App\Http\Controllers\StorefrontController::__invoke
  * @see app/Http/Controllers/StorefrontController.php:15
- * @route '/'
+ * @route '/loja-preview'
  */
         StorefrontControllerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: StorefrontController.url(options),
@@ -64,7 +64,7 @@ StorefrontController.head = (options?: RouteQueryOptions): RouteDefinition<'head
             /**
 * @see \App\Http\Controllers\StorefrontController::__invoke
  * @see app/Http/Controllers/StorefrontController.php:15
- * @route '/'
+ * @route '/loja-preview'
  */
         StorefrontControllerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: StorefrontController.url({

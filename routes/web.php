@@ -13,8 +13,8 @@ use App\Http\Controllers\StorefrontController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', StorefrontController::class)->name('home');
-Route::get('loja-preview', fn () => redirect()->route('home'))->name('store.preview');
+Route::get('/', fn () => Inertia::render('coming-soon'))->name('home');
+Route::get('loja-preview', StorefrontController::class)->name('store.preview');
 Route::get('em-breve', fn () => Inertia::render('coming-soon'))->name('coming-soon');
 Route::post('admin/bootstrap', AdminBootstrapController::class)->name('admin.bootstrap');
 Route::post('mercado-pago/webhook', MercadoPagoWebhookController::class)->name('mercado-pago.webhook');
