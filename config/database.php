@@ -21,6 +21,50 @@ $neonEndpointFromUrl = function (?string $url): ?string {
         : null;
 };
 
+$neonUnpooledUrl = function (?string $url): ?string {
+    if (! is_string($url) || ! str_contains($url, '-pooler.') || ! str_contains($url, 'neon.tech')) {
+        return $url;
+    }
+
+    $parts = parse_url($url);
+
+    if ($parts === false || empty($parts['host']) || ! is_string($parts['host'])) {
+        return $url;
+    }
+
+    $host = preg_replace('/-pooler(?=\.)/', '', $parts['host'], 1);
+
+    if (! is_string($host)) {
+        return $url;
+    }
+
+    $authority = '';
+
+    if (isset($parts['user'])) {
+        $authority .= $parts['user'];
+
+        if (isset($parts['pass'])) {
+            $authority .= ':'.$parts['pass'];
+        }
+
+        $authority .= '@';
+    }
+
+    $authority .= $host;
+
+    if (isset($parts['port'])) {
+        $authority .= ':'.$parts['port'];
+    }
+
+    return ($parts['scheme'] ?? 'postgresql').'://'.$authority
+        .($parts['path'] ?? '')
+        .(isset($parts['query']) ? '?'.$parts['query'] : '')
+        .(isset($parts['fragment']) ? '#'.$parts['fragment'] : '');
+};
+
+$databaseUrl = env('DB_URL') ?: env('DATABASE_URL');
+$unpooledDatabaseUrl = env('DB_UNPOOLED_URL') ?: env('DATABASE_URL_UNPOOLED') ?: $neonUnpooledUrl($databaseUrl);
+
 return [
 
     /*
@@ -52,7 +96,7 @@ return [
 
         'sqlite' => [
             'driver' => 'sqlite',
-            'url' => env('DB_URL'),
+            'url' => $databaseUrl,
             'database' => env('DB_DATABASE', database_path('database.sqlite')),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
@@ -64,7 +108,7 @@ return [
 
         'mysql' => [
             'driver' => 'mysql',
-            'url' => env('DB_URL'),
+            'url' => $databaseUrl,
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -84,7 +128,7 @@ return [
 
         'mariadb' => [
             'driver' => 'mariadb',
-            'url' => env('DB_URL'),
+            'url' => $databaseUrl,
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -104,7 +148,7 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL'),
+            'url' => $databaseUrl,
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -118,9 +162,25 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        'pgsql_unpooled' => [
+            'driver' => 'pgsql',
+            'url' => $unpooledDatabaseUrl,
+            'host' => env('DB_UNPOOLED_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_UNPOOLED_PORT', env('DB_PORT', '5432')),
+            'database' => env('DB_DATABASE', 'laravel'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'neon_endpoint' => env('DB_NEON_ENDPOINT', $neonEndpointFromUrl($unpooledDatabaseUrl)),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => env('DB_SCHEMA', 'public'),
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
-            'url' => env('DB_URL'),
+            'url' => $databaseUrl,
             'host' => env('DB_HOST', 'localhost'),
             'port' => env('DB_PORT', '1433'),
             'database' => env('DB_DATABASE', 'laravel'),
