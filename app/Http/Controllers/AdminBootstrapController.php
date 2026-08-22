@@ -8,9 +8,6 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -35,10 +32,6 @@ class AdminBootstrapController extends Controller
         try {
             Artisan::call('migrate', ['--force' => true]);
             $createdTables = $this->ensureOperationalTables();
-
-            if ($request->boolean('diagnostics')) {
-                return $this->diagnostics($request, $provisioner, $createdTables);
-            }
 
             if (User::query()->where('is_admin', true)->exists()) {
                 return response()->json([
@@ -162,107 +155,5 @@ class AdminBootstrapController extends Controller
         }
 
         return $createdTables;
-    }
-
-    /**
-     * Run token-protected checks for the hosted login pipeline.
-     *
-     * @param  list<string>  $createdTables
-     */
-    private function diagnostics(
-        Request $request,
-        AdminUserProvisioner $provisioner,
-        array $createdTables,
-    ): JsonResponse {
-        $email = strtolower(trim((string) env('AURALEVE_ADMIN_EMAIL', '')));
-        $password = (string) env('AURALEVE_ADMIN_PASSWORD', '');
-        $admin = User::query()->where('email', $email)->first();
-
-        $diagnostics = [
-            'status' => 'diagnostics',
-            'created_tables' => $createdTables,
-            'config' => [
-                'app_env' => app()->environment(),
-                'app_key_configured' => filled(config('app.key')),
-                'cache_default' => config('cache.default'),
-                'session_driver' => config('session.driver'),
-                'session_table' => config('session.table'),
-                'database_default' => config('database.default'),
-                'postgres_search_path' => config('database.connections.pgsql.search_path'),
-                'admin_credentials_configured' => $provisioner->hasConfiguredCredentials(),
-            ],
-            'tables' => array_fill_keys([
-                'users',
-                'sessions',
-                'cache',
-                'cache_locks',
-                'jobs',
-                'job_batches',
-                'failed_jobs',
-            ], false),
-            'checks' => [],
-        ];
-
-        foreach (array_keys($diagnostics['tables']) as $table) {
-            $diagnostics['tables'][$table] = Schema::hasTable($table);
-        }
-
-        $diagnostics['checks']['cache'] = $this->probe(function (): bool {
-            Cache::put('auraleve-bootstrap-diagnostic', 'ok', 60);
-            $passed = Cache::get('auraleve-bootstrap-diagnostic') === 'ok';
-            Cache::forget('auraleve-bootstrap-diagnostic');
-
-            return $passed;
-        });
-
-        $diagnostics['checks']['session'] = $this->probe(function () use ($request): bool {
-            $request->session()->put('auraleve_bootstrap_diagnostic', now()->toIso8601String());
-            $request->session()->save();
-
-            return $request->session()->has('auraleve_bootstrap_diagnostic');
-        });
-
-        $diagnostics['checks']['admin_exists'] = $this->probe(
-            fn (): bool => $admin instanceof User && $admin->is_admin,
-        );
-
-        $diagnostics['checks']['password_hash'] = $this->probe(
-            fn (): bool => $admin instanceof User && Hash::check($password, $admin->password),
-        );
-
-        $diagnostics['checks']['auth_attempt'] = $this->probe(function () use ($email, $password): bool {
-            $authenticated = Auth::guard('web')->attempt([
-                'email' => $email,
-                'password' => $password,
-            ]);
-
-            Auth::guard('web')->logout();
-
-            return $authenticated;
-        });
-
-        return response()->json($diagnostics);
-    }
-
-    /**
-     * @param  callable(): mixed  $callback
-     * @return array<string, mixed>
-     */
-    private function probe(callable $callback): array
-    {
-        try {
-            return [
-                'ok' => true,
-                'value' => $callback(),
-            ];
-        } catch (Throwable $exception) {
-            report($exception);
-
-            return [
-                'ok' => false,
-                'type' => class_basename($exception),
-                'message' => $exception->getMessage(),
-            ];
-        }
     }
 }
