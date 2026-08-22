@@ -1,7 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
-* @see \App\Http\Controllers\StorefrontController::__invoke
- * @see app/Http/Controllers/StorefrontController.php:15
+ * @see routes/web.php:16
  * @route '/loja-preview'
  */
 export const preview = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -15,8 +14,7 @@ preview.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
-* @see \App\Http\Controllers\StorefrontController::__invoke
- * @see app/Http/Controllers/StorefrontController.php:15
+ * @see routes/web.php:16
  * @route '/loja-preview'
  */
 preview.url = (options?: RouteQueryOptions) => {
@@ -24,8 +22,7 @@ preview.url = (options?: RouteQueryOptions) => {
 }
 
 /**
-* @see \App\Http\Controllers\StorefrontController::__invoke
- * @see app/Http/Controllers/StorefrontController.php:15
+ * @see routes/web.php:16
  * @route '/loja-preview'
  */
 preview.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -33,8 +30,7 @@ preview.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
-* @see \App\Http\Controllers\StorefrontController::__invoke
- * @see app/Http/Controllers/StorefrontController.php:15
+ * @see routes/web.php:16
  * @route '/loja-preview'
  */
 preview.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -43,8 +39,7 @@ preview.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
-* @see \App\Http\Controllers\StorefrontController::__invoke
- * @see app/Http/Controllers/StorefrontController.php:15
+ * @see routes/web.php:16
  * @route '/loja-preview'
  */
     const previewForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -53,8 +48,7 @@ preview.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
-* @see \App\Http\Controllers\StorefrontController::__invoke
- * @see app/Http/Controllers/StorefrontController.php:15
+ * @see routes/web.php:16
  * @route '/loja-preview'
  */
         previewForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -62,8 +56,7 @@ preview.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
-* @see \App\Http\Controllers\StorefrontController::__invoke
- * @see app/Http/Controllers/StorefrontController.php:15
+ * @see routes/web.php:16
  * @route '/loja-preview'
  */
         previewForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

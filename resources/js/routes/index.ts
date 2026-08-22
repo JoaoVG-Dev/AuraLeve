@@ -211,7 +211,8 @@ register.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     register.form = registerForm
 /**
- * @see routes/web.php:15
+* @see \App\Http\Controllers\StorefrontController::__invoke
+ * @see app/Http/Controllers/StorefrontController.php:15
  * @route '/'
  */
 export const home = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -225,7 +226,8 @@ home.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:15
+* @see \App\Http\Controllers\StorefrontController::__invoke
+ * @see app/Http/Controllers/StorefrontController.php:15
  * @route '/'
  */
 home.url = (options?: RouteQueryOptions) => {
@@ -233,7 +235,8 @@ home.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:15
+* @see \App\Http\Controllers\StorefrontController::__invoke
+ * @see app/Http/Controllers/StorefrontController.php:15
  * @route '/'
  */
 home.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -241,7 +244,8 @@ home.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:15
+* @see \App\Http\Controllers\StorefrontController::__invoke
+ * @see app/Http/Controllers/StorefrontController.php:15
  * @route '/'
  */
 home.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -250,7 +254,8 @@ home.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:15
+* @see \App\Http\Controllers\StorefrontController::__invoke
+ * @see app/Http/Controllers/StorefrontController.php:15
  * @route '/'
  */
     const homeForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -259,7 +264,8 @@ home.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:15
+* @see \App\Http\Controllers\StorefrontController::__invoke
+ * @see app/Http/Controllers/StorefrontController.php:15
  * @route '/'
  */
         homeForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -267,7 +273,8 @@ home.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:15
+* @see \App\Http\Controllers\StorefrontController::__invoke
+ * @see app/Http/Controllers/StorefrontController.php:15
  * @route '/'
  */
         homeForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -281,6 +288,77 @@ home.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
     
     home.form = homeForm
+/**
+ * @see routes/web.php:17
+ * @route '/em-breve'
+ */
+export const comingSoon = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: comingSoon.url(options),
+    method: 'get',
+})
+
+comingSoon.definition = {
+    methods: ["get","head"],
+    url: '/em-breve',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+ * @see routes/web.php:17
+ * @route '/em-breve'
+ */
+comingSoon.url = (options?: RouteQueryOptions) => {
+    return comingSoon.definition.url + queryParams(options)
+}
+
+/**
+ * @see routes/web.php:17
+ * @route '/em-breve'
+ */
+comingSoon.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: comingSoon.url(options),
+    method: 'get',
+})
+/**
+ * @see routes/web.php:17
+ * @route '/em-breve'
+ */
+comingSoon.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: comingSoon.url(options),
+    method: 'head',
+})
+
+    /**
+ * @see routes/web.php:17
+ * @route '/em-breve'
+ */
+    const comingSoonForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: comingSoon.url(options),
+        method: 'get',
+    })
+
+            /**
+ * @see routes/web.php:17
+ * @route '/em-breve'
+ */
+        comingSoonForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: comingSoon.url(options),
+            method: 'get',
+        })
+            /**
+ * @see routes/web.php:17
+ * @route '/em-breve'
+ */
+        comingSoonForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: comingSoon.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    comingSoon.form = comingSoonForm
 /**
 * @see \App\Http\Controllers\CheckoutController::checkout
  * @see app/Http/Controllers/CheckoutController.php:15
